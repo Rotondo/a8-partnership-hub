@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import DashboardCard from "@/components/ui/dashboard/DashboardCard";
@@ -15,12 +14,14 @@ import {
   Legend,
   Bar,
 } from "recharts";
-import { ArrowUpRight, ArrowDownRight, Search, Users } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Search, Users, Balance, ChevronLeftRight } from "lucide-react";
 import { externalPartners, groupCompanies } from "@/data/mockData";
-import { getPartnerBalanceData, BalanceData } from "@/data/mockData";
+import { getPartnerBalanceData, BalanceData, getGroupPartnerBalanceData } from "@/data/mockData";
+import { toast } from "@/components/ui/use-toast";
 
 const Partners = () => {
   const [balanceData, setBalanceData] = useState<BalanceData[]>([]);
+  const [groupBalanceData, setGroupBalanceData] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -28,7 +29,9 @@ const Partners = () => {
     // Simulate API call
     const timer = setTimeout(() => {
       const data = getPartnerBalanceData();
+      const groupData = getGroupPartnerBalanceData();
       setBalanceData(data);
+      setGroupBalanceData(groupData);
       setLoading(false);
     }, 700);
 
@@ -40,6 +43,17 @@ const Partners = () => {
     partner.partnerName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Helper function to determine balance status
+  const getBalanceStatus = (balance: number) => {
+    if (balance > 10) return "Strongly Positive";
+    if (balance > 5) return "Positive";
+    if (balance > 0) return "Slightly Positive";
+    if (balance === 0) return "Balanced";
+    if (balance > -5) return "Slightly Negative";
+    if (balance > -10) return "Negative";
+    return "Strongly Negative";
+  };
+
   return (
     <DashboardLayout>
       <div className="mb-8">
@@ -48,6 +62,141 @@ const Partners = () => {
           Manage and analyze partnership balance with external partners
         </p>
       </div>
+
+      {/* A&eight Group Balance Dashboard */}
+      {!loading && groupBalanceData && (
+        <DashboardCard title="A&eight Group Balance" className="mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 space-y-6">
+              <div className="text-center p-6 border rounded-lg bg-gradient-to-br from-blue-50 to-purple-50">
+                <h3 className="text-lg font-medium mb-2">Overall Partnership Balance</h3>
+                <div className="flex items-center justify-center gap-4 mb-4">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">Received</p>
+                    <p className="text-2xl font-bold text-green-600">{groupBalanceData.totalReceived}</p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <ChevronLeftRight className="h-6 w-6 text-blue-500" />
+                    <p className="text-sm text-muted-foreground">vs</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">Sent</p>
+                    <p className="text-2xl font-bold text-blue-600">{groupBalanceData.totalSent}</p>
+                  </div>
+                </div>
+                
+                <div className="relative pt-4">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-xs text-red-600">Deficit</span>
+                    <span className="text-xs text-green-600">Surplus</span>
+                  </div>
+                  <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full ${groupBalanceData.balance > 0 ? 'bg-green-500' : 'bg-red-500'}`}
+                      style={{ 
+                        width: `${Math.min(Math.abs(groupBalanceData.balance) * 2, 100)}%`,
+                        marginLeft: groupBalanceData.balance > 0 ? '50%' : '', 
+                        marginRight: groupBalanceData.balance < 0 ? '50%' : '',
+                      }}
+                    ></div>
+                  </div>
+                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border border-gray-300 shadow-sm rounded-full h-7 w-7 flex items-center justify-center z-10">
+                    <Balance className="h-4 w-4 text-blue-600" />
+                  </div>
+                </div>
+                
+                <div className="mt-6">
+                  <p className="text-sm mb-1">Balance Score</p>
+                  <div className="flex items-center justify-center">
+                    {groupBalanceData.balance === 0 ? (
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800 text-sm">
+                        Perfectly Balanced
+                      </Badge>
+                    ) : groupBalanceData.balance > 0 ? (
+                      <Badge variant="outline" className="bg-green-100 text-green-800 text-sm">
+                        <ArrowDownRight className="h-3 w-3 mr-1" />
+                        +{groupBalanceData.balance} (Receiving More)
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-red-100 text-red-800 text-sm">
+                        <ArrowUpRight className="h-3 w-3 mr-1" />
+                        {groupBalanceData.balance} (Sending More)
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    {getBalanceStatus(groupBalanceData.balance)} relationship with external partners
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="lg:col-span-2">
+              <h3 className="text-lg font-medium mb-4">Monthly Balance Trend</h3>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={groupBalanceData.monthlyBalanceData}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip
+                      formatter={(value, name) => {
+                        if (name === "balance") {
+                          return [`${value > 0 ? "+" : ""}${value}`, "Balance"];
+                        }
+                        return [value, name === "sent" ? "Sent" : "Received"];
+                      }}
+                    />
+                    <Legend />
+                    <Bar
+                      dataKey="received"
+                      name="Received"
+                      fill="#26a69a"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="sent"
+                      name="Sent"
+                      fill="#1e88e5"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="balance"
+                      name="Balance"
+                      fill="#ab47bc"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="bg-muted/20 p-4 rounded-lg mt-4">
+                <h4 className="font-medium mb-2">Partnership Balance Insights</h4>
+                <p className="text-sm text-muted-foreground">
+                  This chart shows the monthly balance between received and sent opportunities with external partners.
+                  A positive balance indicates the A&eight group is receiving more opportunities than sending.
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      toast({
+                        title: "Report Generated",
+                        description: "Balance report has been downloaded successfully.",
+                      });
+                    }}
+                  >
+                    Export Balance Report
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DashboardCard>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <DashboardCard title="A&eight Group Companies">

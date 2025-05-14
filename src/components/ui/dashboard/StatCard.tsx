@@ -10,6 +10,7 @@ interface StatCardProps {
   icon?: React.ReactNode;
   trend?: number;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -19,9 +20,13 @@ const StatCard: React.FC<StatCardProps> = ({
   icon,
   trend,
   className,
+  style,
 }) => {
   return (
-    <Card className={cn("shadow-sm hover:shadow-md transition-shadow duration-300", className)}>
+    <Card 
+      className={cn("shadow-sm hover:shadow-md transition-shadow duration-300", className)} 
+      style={style}
+    >
       <CardContent className="p-6">
         <div className="flex justify-between items-start">
           <div>

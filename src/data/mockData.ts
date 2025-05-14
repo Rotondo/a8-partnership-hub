@@ -1,4 +1,3 @@
-
 import { 
   Opportunity,
   OpportunityStatus,
@@ -6,8 +5,15 @@ import {
   User,
   ChartDataPoint,
   LineChartDataPoint,
-  BalanceData
 } from "@/types";
+
+// Define BalanceData type to export
+export interface BalanceData {
+  partnerName: string;
+  sent: number;
+  received: number;
+  balance: number;
+}
 
 // Group companies
 export const groupCompanies: GroupCompany[] = [
@@ -276,7 +282,7 @@ export const getPartnerBalanceData = (): BalanceData[] => {
 
   externalPartners.forEach(partner => {
     const sent = mockOpportunities.filter(
-      opp => opp.type === 'outgoing' && opp.partners.includes(partner)
+      opp => opp.type === 'outgoing' && opp.partners && opp.partners.includes(partner)
     ).length;
     
     const received = mockOpportunities.filter(
@@ -349,4 +355,51 @@ export const getIntraGroupExchangeData = () => {
     });
 
   return exchangeMatrix;
+};
+
+// Calculate the overall balance between A&eight group and external partners
+export const getGroupPartnerBalanceData = () => {
+  // Total sent to external partners
+  const totalSent = mockOpportunities.filter(
+    opp => opp.type === 'outgoing'
+  ).length;
+  
+  // Total received from external partners
+  const totalReceived = mockOpportunities.filter(
+    opp => opp.type === 'incoming'
+  ).length;
+  
+  // Balance calculation
+  const balance = totalReceived - totalSent;
+  
+  // Monthly balance data for chart
+  const monthlyBalanceData = Array.from({ length: 12 }, (_, i) => {
+    const month = new Date();
+    month.setMonth(i);
+    const monthName = month.toLocaleString('default', { month: 'short' });
+    
+    const sent = mockOpportunities.filter(opp => {
+      const oppDate = new Date(opp.date);
+      return opp.type === 'outgoing' && oppDate.getMonth() === i;
+    }).length;
+    
+    const received = mockOpportunities.filter(opp => {
+      const oppDate = new Date(opp.date);
+      return opp.type === 'incoming' && oppDate.getMonth() === i;
+    }).length;
+    
+    return {
+      name: monthName,
+      sent,
+      received,
+      balance: received - sent
+    };
+  });
+  
+  return {
+    totalSent,
+    totalReceived,
+    balance,
+    monthlyBalanceData
+  };
 };
