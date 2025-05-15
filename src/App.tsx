@@ -26,13 +26,17 @@ const App = () => (
         <Route path="/" element={<Index />} />
 
         {/* Rotas protegidas dentro do layout do dashboard */}
-<Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-  <Route path="/oportunidades" element={<Opportunities />} />
-  <Route path="/oportunidades/:id" element={<OpportunityDetail />} />
-  <Route path="/parceiros" element={<Partners />} />
-  <Route path="/relatorios" element={<Reports />} />
-  <Route index element={<Index />} /> // Rota padrão dentro do layout
-</Route>
+<Routes>
+  <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+    <Route index element={<Index />} />
+    <Route path="opportunities" element={<Opportunities />} />
+    <Route path="opportunities/:id" element={<OpportunityDetail />} />
+    <Route path="partners" element={<Partners />} />
+    <Route path="reports" element={<Reports />} />
+  </Route>
+  <Route path="*" element={<NotFound />} />
+</Routes>
+
 
         {/* Página 404 */}
         <Route path="*" element={<NotFound />} />
