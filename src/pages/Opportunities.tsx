@@ -335,7 +335,7 @@ const Opportunities = () => {
       op.usuarios?.nome_completo || op.id_responsavel_envio_recebimento,
       new Date(op.data_envio).toLocaleDateString(),
       op.observacoes
-    ].map(field => `"${String(field || "").replace(/"/g, """" )}"`).join(","));
+    ].map(field => `"${String(field || "").replace(/"/g, "\"\"")}"`).join(","));
 
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
