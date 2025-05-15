@@ -13,7 +13,7 @@ import {
   SidebarMenuItem,
   SidebarTrigger
 } from "@/components/ui/sidebar";
-import { BarChart3, PieChart, Search, Users, FileText, BarChart } from "lucide-react";
+import { BarChart3, PieChart, Users, FileText, BarChart } from "lucide-react";
 
 const Sidebar = () => {
   return (
