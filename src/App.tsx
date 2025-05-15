@@ -20,8 +20,10 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Routes>
+        {/* Página inicial */}
         <Route path="/" element={<Index />} />
 
+        {/* Rotas protegidas dentro do layout do dashboard */}
         <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
           <Route path="/oportunidades" element={<Opportunities />} />
           <Route path="/oportunidades/:id" element={<OpportunityDetail />} />
@@ -29,6 +31,7 @@ const App = () => (
           <Route path="/relatorios" element={<Reports />} />
         </Route>
 
+        {/* Página 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
