@@ -1,435 +1,442 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import DashboardCard from "@/components/ui/dashboard/DashboardCard";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import StatCard from "@/components/ui/dashboard/StatCard";
 import {
   BarChart,
   ResponsiveContainer,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Legend,
-  Bar,
+  Cell,
+  LineChart,
+  Line,
 } from "recharts";
-import { ArrowUpRight, ArrowDownRight, Search, Users, Balance, ChevronLeftRight } from "lucide-react";
-import { externalPartners, groupCompanies } from "@/data/mockData";
-import { getPartnerBalanceData, BalanceData, getGroupPartnerBalanceData } from "@/data/mockData";
-import { toast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowRight, ArrowLeft, ChevronsLeftRight, Download } from "lucide-react";
+import { externalPartners, mockOpportunities } from "@/data/mockData";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+// Renomeando Boone para B8one em todo o código
+const groupCompanies = ["Cryah", "Lomadee", "Monitfy", "B8one", "SAIO"];
+const COLORS = ["#8B5CF6", "#A78BFA", "#C4B5FD", "#DDD6FE", "#EDE9FE"];
 
 const Partners = () => {
-  const [balanceData, setBalanceData] = useState<BalanceData[]>([]);
-  const [groupBalanceData, setGroupBalanceData] = useState<any>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState("last6months");
 
-  useEffect(() => {
-    // Simulate API call
-    const timer = setTimeout(() => {
-      const data = getPartnerBalanceData();
-      const groupData = getGroupPartnerBalanceData();
-      setBalanceData(data);
-      setGroupBalanceData(groupData);
-      setLoading(false);
-    }, 700);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Filter partners based on search
-  const filteredPartners = balanceData.filter((partner) =>
-    partner.partnerName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Helper function to determine balance status
-  const getBalanceStatus = (balance: number) => {
-    if (balance > 10) return "Strongly Positive";
-    if (balance > 5) return "Positive";
-    if (balance > 0) return "Slightly Positive";
-    if (balance === 0) return "Balanced";
-    if (balance > -5) return "Slightly Negative";
-    if (balance > -10) return "Negative";
-    return "Strongly Negative";
+  const totalSentByCompany = (companyName: string): number => {
+    return mockOpportunities.filter(
+      (opportunity) => 
+        opportunity.type === "outgoing" && 
+        opportunity.sourceCompany === companyName
+    ).length;
   };
 
+  const totalReceivedByPartner = (partnerName: string): number => {
+    return mockOpportunities.filter(
+      (opportunity) => 
+        opportunity.type === "incoming" && 
+        opportunity.partnerName === partnerName
+    ).length;
+  };
+
+  const totalSentToPartner = (partnerName: string): number => {
+    return mockOpportunities.filter(
+      (opportunity) => 
+        opportunity.type === "outgoing" && 
+        opportunity.partners.includes(partnerName)
+    ).length;
+  };
+
+  // Calcula o balanço para cada parceiro (recebido - enviado)
+  const partnerBalance = externalPartners.map((partner) => {
+    const received = totalReceivedByPartner(partner);
+    const sent = totalSentToPartner(partner);
+    
+    return {
+      name: partner,
+      received,
+      sent,
+      balance: received - sent
+    };
+  });
+
+  // Ordenando para mostrar os melhores balanços primeiro
+  partnerBalance.sort((a, b) => b.balance - a.balance);
+  
+  // Dados para o gráfico de balanço mensal
+  const monthlyBalanceData = [
+    { month: "Jan", balance: 5 },
+    { month: "Fev", balance: 8 },
+    { month: "Mar", balance: -3 },
+    { month: "Abr", balance: 4 },
+    { month: "Mai", balance: 9 },
+    { month: "Jun", balance: -2 },
+  ];
+
+  // Função para calcular quantas oportunidades cada parceiro enviou para cada empresa do grupo
+  const calculatePartnerToGroupMatrix = () => {
+    const matrix = [];
+    
+    for (const partner of externalPartners) {
+      const partnerRow: Record<string, any> = { name: partner };
+      
+      for (const company of groupCompanies) {
+        partnerRow[company] = mockOpportunities.filter(
+          (opportunity) => 
+            opportunity.type === "incoming" && 
+            opportunity.partnerName === partner && 
+            opportunity.targetCompany === company
+        ).length;
+      }
+      
+      matrix.push(partnerRow);
+    }
+    
+    return matrix;
+  };
+  
+  // Função para calcular quantas oportunidades cada empresa do grupo enviou para cada parceiro
+  const calculateGroupToPartnerMatrix = () => {
+    const matrix = [];
+    
+    for (const company of groupCompanies) {
+      const companyRow: Record<string, any> = { name: company };
+      
+      for (const partner of externalPartners) {
+        companyRow[partner] = mockOpportunities.filter(
+          (opportunity) => 
+            opportunity.type === "outgoing" && 
+            opportunity.sourceCompany === company && 
+            opportunity.partners.includes(partner)
+        ).length;
+      }
+      
+      matrix.push(companyRow);
+    }
+    
+    return matrix;
+  };
+  
+  // Calcula o total do balanço do grupo inteiro com parceiros externos
+  const calculateGroupTotalBalance = () => {
+    const totalReceived = mockOpportunities.filter(opportunity => opportunity.type === "incoming").length;
+    const totalSent = mockOpportunities.filter(opportunity => opportunity.type === "outgoing").length;
+    
+    return {
+      received: totalReceived,
+      sent: totalSent,
+      balance: totalReceived - totalSent,
+      percentBalance: totalSent === 0 ? 100 : (totalReceived / totalSent) * 100
+    };
+  };
+
+  const groupTotalBalance = calculateGroupTotalBalance();
+  
+  // Dados para os gráficos matriz
+  const partnerToGroupMatrix = calculatePartnerToGroupMatrix();
+  const groupToPartnerMatrix = calculateGroupToPartnerMatrix();
+
+  const handleExportData = () => {
+    console.log("Exportando dados...");
+  };
+  
   return (
     <DashboardLayout>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-aeight-dark">Partners</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage and analyze partnership balance with external partners
-        </p>
-      </div>
-
-      {/* A&eight Group Balance Dashboard */}
-      {!loading && groupBalanceData && (
-        <DashboardCard title="A&eight Group Balance" className="mb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1 space-y-6">
-              <div className="text-center p-6 border rounded-lg bg-gradient-to-br from-blue-50 to-purple-50">
-                <h3 className="text-lg font-medium mb-2">Overall Partnership Balance</h3>
-                <div className="flex items-center justify-center gap-4 mb-4">
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Received</p>
-                    <p className="text-2xl font-bold text-green-600">{groupBalanceData.totalReceived}</p>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <ChevronLeftRight className="h-6 w-6 text-blue-500" />
-                    <p className="text-sm text-muted-foreground">vs</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Sent</p>
-                    <p className="text-2xl font-bold text-blue-600">{groupBalanceData.totalSent}</p>
-                  </div>
-                </div>
-                
-                <div className="relative pt-4">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-xs text-red-600">Deficit</span>
-                    <span className="text-xs text-green-600">Surplus</span>
-                  </div>
-                  <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${groupBalanceData.balance > 0 ? 'bg-green-500' : 'bg-red-500'}`}
-                      style={{ 
-                        width: `${Math.min(Math.abs(groupBalanceData.balance) * 2, 100)}%`,
-                        marginLeft: groupBalanceData.balance > 0 ? '50%' : '', 
-                        marginRight: groupBalanceData.balance < 0 ? '50%' : '',
-                      }}
-                    ></div>
-                  </div>
-                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border border-gray-300 shadow-sm rounded-full h-7 w-7 flex items-center justify-center z-10">
-                    <Balance className="h-4 w-4 text-blue-600" />
-                  </div>
-                </div>
-                
-                <div className="mt-6">
-                  <p className="text-sm mb-1">Balance Score</p>
-                  <div className="flex items-center justify-center">
-                    {groupBalanceData.balance === 0 ? (
-                      <Badge variant="outline" className="bg-blue-100 text-blue-800 text-sm">
-                        Perfectly Balanced
-                      </Badge>
-                    ) : groupBalanceData.balance > 0 ? (
-                      <Badge variant="outline" className="bg-green-100 text-green-800 text-sm">
-                        <ArrowDownRight className="h-3 w-3 mr-1" />
-                        +{groupBalanceData.balance} (Receiving More)
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-red-100 text-red-800 text-sm">
-                        <ArrowUpRight className="h-3 w-3 mr-1" />
-                        {groupBalanceData.balance} (Sending More)
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-3">
-                    {getBalanceStatus(groupBalanceData.balance)} relationship with external partners
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="lg:col-span-2">
-              <h3 className="text-lg font-medium mb-4">Monthly Balance Trend</h3>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={groupBalanceData.monthlyBalanceData}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value, name) => {
-                        if (name === "balance") {
-                          return [`${value > 0 ? "+" : ""}${value}`, "Balance"];
-                        }
-                        return [value, name === "sent" ? "Sent" : "Received"];
-                      }}
-                    />
-                    <Legend />
-                    <Bar
-                      dataKey="received"
-                      name="Received"
-                      fill="#26a69a"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="sent"
-                      name="Sent"
-                      fill="#1e88e5"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="balance"
-                      name="Balance"
-                      fill="#ab47bc"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="bg-muted/20 p-4 rounded-lg mt-4">
-                <h4 className="font-medium mb-2">Partnership Balance Insights</h4>
-                <p className="text-sm text-muted-foreground">
-                  This chart shows the monthly balance between received and sent opportunities with external partners.
-                  A positive balance indicates the A&eight group is receiving more opportunities than sending.
-                </p>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      toast({
-                        title: "Report Generated",
-                        description: "Balance report has been downloaded successfully.",
-                      });
-                    }}
-                  >
-                    Export Balance Report
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </DashboardCard>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <DashboardCard title="A&eight Group Companies">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {groupCompanies.map((company) => (
-              <div
-                key={company}
-                className="flex flex-col items-center justify-center p-4 border rounded-lg hover:shadow-md transition-shadow"
-              >
-                <div className="w-12 h-12 flex items-center justify-center bg-aeight-blue/10 rounded-full mb-3">
-                  <Users className="h-6 w-6 text-aeight-blue" />
-                </div>
-                <div className="text-center">
-                  <h3 className="font-medium">{company}</h3>
-                </div>
-              </div>
-            ))}
-          </div>
-        </DashboardCard>
-
-        <DashboardCard title="Partner Statistics">
-          <div className="space-y-6">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="p-4 border rounded-lg bg-blue-50">
-                <div className="text-sm font-medium text-muted-foreground mb-1">
-                  Total Partners
-                </div>
-                <div className="text-2xl font-bold">{externalPartners.length}</div>
-              </div>
-              <div className="p-4 border rounded-lg bg-green-50">
-                <div className="text-sm font-medium text-muted-foreground mb-1">
-                  Active Partnerships
-                </div>
-                <div className="text-2xl font-bold">
-                  {balanceData.filter((p) => p.sent > 0 || p.received > 0).length}
-                </div>
-              </div>
-              <div className="p-4 border rounded-lg bg-purple-50">
-                <div className="text-sm font-medium text-muted-foreground mb-1">
-                  Balanced Partners
-                </div>
-                <div className="text-2xl font-bold">
-                  {balanceData.filter((p) => p.balance === 0 && (p.sent > 0 || p.received > 0)).length}
-                </div>
-              </div>
-            </div>
-            <div className="bg-aeight-gray p-4 rounded-lg">
-              <p className="text-sm">
-                <span className="font-medium">Balance Score:</span> The difference between
-                received and sent opportunities. A positive score indicates that
-                the partner is sending more opportunities than receiving.
-              </p>
-            </div>
-          </div>
-        </DashboardCard>
-      </div>
-
-      <DashboardCard title="Partnership Balance" className="mb-8">
-        <div className="mb-6">
-          <p className="text-sm text-muted-foreground mb-4">
-            This chart shows the balance of opportunities exchanged with external
-            partners. A positive balance means the partner has sent more opportunities
-            to the group than received.
+      <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-aeight-dark">Parceiros</h1>
+          <p className="text-muted-foreground mt-2">
+            Gerencie e monitore o desempenho de parcerias externas
           </p>
-          
-          <div className="h-[400px]">
-            {loading ? (
-              <div className="h-full flex items-center justify-center">
-                <div className="text-muted-foreground">Loading chart data...</div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportData}>
+            <Download className="w-4 h-4 mr-2" />
+            Exportar
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-3 mb-8">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <StatCard
+                  title="Parceiros Ativos"
+                  value={externalPartners.length.toString()}
+                  trend="up"
+                  trendValue="2"
+                  description="vs. mês passado"
+                />
               </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Total de parceiros externos ativos com trocas de oportunidades nos últimos 6 meses.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <StatCard
+                  title="Oportunidades Recebidas"
+                  value={groupTotalBalance.received.toString()}
+                  trend={groupTotalBalance.received > groupTotalBalance.sent ? "up" : "down"}
+                  trendValue={Math.abs(groupTotalBalance.received - groupTotalBalance.sent).toString()}
+                  description="vs. enviadas"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Número total de oportunidades recebidas de parceiros externos.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <StatCard
+                  title="Oportunidades Enviadas"
+                  value={groupTotalBalance.sent.toString()}
+                  trend={groupTotalBalance.sent > groupTotalBalance.received ? "up" : "down"}
+                  trendValue={Math.abs(groupTotalBalance.received - groupTotalBalance.sent).toString()}
+                  description="vs. recebidas"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Número total de oportunidades enviadas para parceiros externos.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-3 mb-8">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="col-span-3">
+                <DashboardCard title="Balanço Total do Grupo A&eight">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Recebidas</span>
+                        <span className="text-green-600 font-bold">{groupTotalBalance.received}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Enviadas</span>
+                        <span className="text-blue-600 font-bold">{groupTotalBalance.sent}</span>
+                      </div>
+                      <div className="flex justify-between items-center border-t pt-2">
+                        <span className="font-medium">Balanço</span>
+                        <span className={`font-bold ${groupTotalBalance.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {groupTotalBalance.balance > 0 ? '+' : ''}{groupTotalBalance.balance}
+                        </span>
+                      </div>
+
+                      <div className="mt-4">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span>Desequilíbrio</span>
+                          <span>Equilíbrio</span>
+                        </div>
+                        <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-green-600 rounded-full" 
+                            style={{ 
+                              width: `${Math.min(100, Math.max(0, groupTotalBalance.percentBalance))}%`,
+                              backgroundColor: groupTotalBalance.balance >= 0 ? '#10b981' : '#ef4444'
+                            }}
+                          ></div>
+                        </div>
+                        <div className="text-center text-sm mt-1">
+                          {Math.round(groupTotalBalance.percentBalance)}% 
+                          {groupTotalBalance.balance >= 0 ? ' (favorável)' : ' (desfavorável)'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <p className="mb-2 font-medium">Tendência de Balanço Mensal</p>
+                      <div className="h-[200px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={monthlyBalanceData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis />
+                            <RechartsTooltip
+                              formatter={(value: number) => [`${value} oportunidades`, 'Balanço']}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="balance" 
+                              stroke="#8B5CF6"
+                              strokeWidth={2}
+                              dot={{ r: 4 }}
+                              activeDot={{ r: 6 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </div>
+                </DashboardCard>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Visão geral do equilíbrio entre as oportunidades recebidas e enviadas para parceiros externos. Um balanço positivo indica que recebemos mais oportunidades do que enviamos.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <h2 className="text-xl font-bold">Balanço por Parceiro</h2>
+        <Select
+          value={period}
+          onValueChange={setPeriod}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Último mês" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="lastmonth">Último mês</SelectItem>
+            <SelectItem value="last3months">Últimos 3 meses</SelectItem>
+            <SelectItem value="last6months">Últimos 6 meses</SelectItem>
+            <SelectItem value="thisyear">Este ano</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="rounded-md border shadow-md p-6 mb-8">
+              <ResponsiveContainer width="100%" height={400}>
                 <BarChart
-                  data={balanceData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
-                  barGap={0}
+                  data={partnerBalance}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="partnerName" />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip
-                    formatter={(value, name) => {
-                      if (name === "balance") {
-                        return [`${value > 0 ? "+" : ""}${value} Opportunities`, "Balance"];
-                      }
-                      return [`${value} Opportunities`, name === "sent" ? "Sent" : "Received"];
-                    }}
-                  />
+                  <RechartsTooltip />
                   <Legend />
-                  <Bar
-                    dataKey="received"
-                    name="Received"
-                    fill="#26a69a"
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="sent"
-                    name="Sent"
-                    fill="#1e88e5"
-                    radius={[4, 4, 0, 0]}
-                  />
+                  <Bar name="Recebidas" dataKey="received" fill="#10b981" />
+                  <Bar name="Enviadas" dataKey="sent" fill="#3b82f6" />
+                  <Bar name="Balanço" dataKey="balance">
+                    {partnerBalance.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={entry.balance >= 0 ? "#10b981" : "#ef4444"} 
+                      />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-      </DashboardCard>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Comparação entre oportunidades recebidas e enviadas por parceiro. O balanço positivo (verde) indica mais oportunidades recebidas do que enviadas.</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
-      <DashboardCard title="Partner List">
-        <div className="mb-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
-            <Input
-              placeholder="Search partners..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
+      <div className="grid gap-6 md:grid-cols-2 mb-8">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <DashboardCard title="Oportunidades de Parceiros para A&eight">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead>
+                        <tr>
+                          <th className="px-4 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Parceiro</th>
+                          {groupCompanies.map((company) => (
+                            <th key={company} className="px-4 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">{company}</th>
+                          ))}
+                          <th className="px-4 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {partnerToGroupMatrix.map((row, rowIndex) => (
+                          <tr key={row.name}>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">{row.name}</td>
+                            {groupCompanies.map((company) => (
+                              <td key={company} className="px-4 py-2 whitespace-nowrap text-sm">
+                                {row[company]}
+                              </td>
+                            ))}
+                            <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                              {groupCompanies.reduce((sum, company) => sum + row[company], 0)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </DashboardCard>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Matriz que mostra quantas oportunidades cada parceiro externo enviou para cada empresa do grupo A&eight.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-3 px-4">Partner</th>
-                <th className="text-center py-3 px-4">Received</th>
-                <th className="text-center py-3 px-4">Sent</th>
-                <th className="text-center py-3 px-4">Balance</th>
-                <th className="text-center py-3 px-4">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: 5 }).map((_, index) => (
-                  <tr key={`loading-${index}`} className="animate-pulse">
-                    <td className="py-3 px-4">
-                      <div className="h-5 bg-muted rounded w-32"></div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="h-5 bg-muted rounded w-8 mx-auto"></div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="h-5 bg-muted rounded w-8 mx-auto"></div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="h-5 bg-muted rounded w-16 mx-auto"></div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="h-5 bg-muted rounded w-20 mx-auto"></div>
-                    </td>
-                  </tr>
-                ))
-              ) : filteredPartners.length > 0 ? (
-                filteredPartners.map((partner, idx) => (
-                  <tr
-                    key={partner.partnerName}
-                    className={`hover:bg-muted/50 ${
-                      idx % 2 === 0 ? "bg-muted/20" : ""
-                    }`}
-                  >
-                    <td className="py-3 px-4 font-medium">
-                      {partner.partnerName}
-                    </td>
-                    <td className="py-3 px-4 text-center">{partner.received}</td>
-                    <td className="py-3 px-4 text-center">{partner.sent}</td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="flex items-center justify-center">
-                        {partner.balance > 0 ? (
-                          <Badge
-                            variant="outline"
-                            className="bg-green-100 text-green-800 hover:bg-green-100"
-                          >
-                            <ArrowDownRight className="h-3 w-3 mr-1" />
-                            +{partner.balance}
-                          </Badge>
-                        ) : partner.balance < 0 ? (
-                          <Badge
-                            variant="outline"
-                            className="bg-red-100 text-red-800 hover:bg-red-100"
-                          >
-                            <ArrowUpRight className="h-3 w-3 mr-1" />
-                            {partner.balance}
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="bg-gray-100 text-gray-800 hover:bg-gray-100"
-                          >
-                            Balanced
-                          </Badge>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <Badge
-                        variant="outline"
-                        className={
-                          partner.sent === 0 && partner.received === 0
-                            ? "bg-gray-100 text-gray-800 hover:bg-gray-100"
-                            : partner.balance > 0
-                            ? "bg-green-100 text-green-800 hover:bg-green-100"
-                            : partner.balance < 0
-                            ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
-                            : "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                        }
-                      >
-                        {partner.sent === 0 && partner.received === 0
-                          ? "Inactive"
-                          : partner.balance > 5
-                          ? "Very Active"
-                          : partner.balance > 0
-                          ? "Active"
-                          : partner.balance < -5
-                          ? "Needs Attention"
-                          : partner.balance < 0
-                          ? "Unbalanced"
-                          : "Balanced"}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="py-6 text-center text-muted-foreground">
-                    No partners matching your search criteria
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </DashboardCard>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <DashboardCard title="Oportunidades de A&eight para Parceiros">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead>
+                        <tr>
+                          <th className="px-4 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
+                          {externalPartners.map((partner) => (
+                            <th key={partner} className="px-4 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">{partner}</th>
+                          ))}
+                          <th className="px-4 py-2 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {groupToPartnerMatrix.map((row) => (
+                          <tr key={row.name}>
+                            <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">{row.name}</td>
+                            {externalPartners.map((partner) => (
+                              <td key={partner} className="px-4 py-2 whitespace-nowrap text-sm">
+                                {row[partner]}
+                              </td>
+                            ))}
+                            <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                              {externalPartners.reduce((sum, partner) => sum + row[partner], 0)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </DashboardCard>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Matriz que mostra quantas oportunidades cada empresa do grupo A&eight enviou para cada parceiro externo.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </DashboardLayout>
   );
 };

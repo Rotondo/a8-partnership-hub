@@ -39,6 +39,7 @@ import {
   statusOptions,
 } from "@/data/mockData";
 import { Opportunity, OpportunityStatus, GroupCompany } from "@/types";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const OpportunityTypeBadge = ({ type }: { type: string }) => {
   const styles = {
@@ -48,9 +49,9 @@ const OpportunityTypeBadge = ({ type }: { type: string }) => {
   };
 
   const labels = {
-    internal: "Intragroup",
-    incoming: "Incoming",
-    outgoing: "Outgoing",
+    internal: "Intragrupo",
+    incoming: "Recebido",
+    outgoing: "Enviado",
   };
 
   return (
@@ -105,7 +106,7 @@ const Opportunities = () => {
   });
 
   useEffect(() => {
-    // Apply filters
+    // Aplicar filtros
     let filteredOpps = [...mockOpportunities];
 
     if (filter.type) {
@@ -160,14 +161,14 @@ const Opportunities = () => {
   };
 
   const handleCreateOpportunity = () => {
-    // Here you would normally send this to your backend API
-    console.log("Creating new opportunity:", newOpportunity);
+    // Aqui você normalmente enviaria isso para sua API de backend
+    console.log("Criando nova oportunidade:", newOpportunity);
     
-    // In a real app, you'd add the new opportunity to the list
-    // For now, we'll just close the dialog
+    // Em uma aplicação real, você adicionaria a nova oportunidade à lista
+    // Por enquanto, vamos apenas fechar o diálogo
     setIsCreateDialogOpen(false);
     
-    // Reset form
+    // Resetar formulário
     setNewOpportunity({
       type: "internal",
       sourceCompany: "",
@@ -184,51 +185,51 @@ const Opportunities = () => {
   };
 
   const handleExportData = () => {
-    console.log("Exporting data...");
-    // In a real app, this would generate and download a CSV/Excel file
+    console.log("Exportando dados...");
+    // Em uma aplicação real, isso geraria e baixaria um arquivo CSV/Excel
   };
 
   return (
     <DashboardLayout>
       <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-aeight-dark">Opportunities</h1>
+          <h1 className="text-3xl font-bold text-aeight-dark">Oportunidades</h1>
           <p className="text-muted-foreground mt-2">
-            Manage and monitor all partnership opportunities
+            Gerencie e monitore todas as oportunidades de parceria
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExportData}>
             <Download className="w-4 h-4 mr-2" />
-            Export
+            Exportar
           </Button>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
-                New Opportunity
+                Nova Oportunidade
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
-                <DialogTitle>Create New Opportunity</DialogTitle>
+                <DialogTitle>Criar Nova Oportunidade</DialogTitle>
                 <DialogDescription>
-                  Register a new partnership opportunity by filling in the details below.
+                  Registre uma nova oportunidade de parceria preenchendo os detalhes abaixo.
                 </DialogDescription>
               </DialogHeader>
 
               <Tabs defaultValue="internal" className="w-full mt-4">
                 <TabsList className="w-full">
-                  <TabsTrigger value="internal" className="flex-1">Intragroup</TabsTrigger>
-                  <TabsTrigger value="incoming" className="flex-1">Incoming External</TabsTrigger>
-                  <TabsTrigger value="outgoing" className="flex-1">Outgoing External</TabsTrigger>
+                  <TabsTrigger value="internal" className="flex-1">Intragrupo</TabsTrigger>
+                  <TabsTrigger value="incoming" className="flex-1">Recebida Externa</TabsTrigger>
+                  <TabsTrigger value="outgoing" className="flex-1">Enviada Externa</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="internal">
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="sourceCompany">Source Company</Label>
+                        <Label htmlFor="sourceCompany">Empresa de Origem</Label>
                         <Select
                           value={newOpportunity.sourceCompany}
                           onValueChange={(value) =>
@@ -236,7 +237,7 @@ const Opportunities = () => {
                           }
                         >
                           <SelectTrigger id="sourceCompany">
-                            <SelectValue placeholder="Select company" />
+                            <SelectValue placeholder="Selecione empresa" />
                           </SelectTrigger>
                           <SelectContent>
                             {groupCompanies.map((company) => (
@@ -248,7 +249,7 @@ const Opportunities = () => {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="targetCompany">Target Company</Label>
+                        <Label htmlFor="targetCompany">Empresa de Destino</Label>
                         <Select
                           value={newOpportunity.targetCompany}
                           onValueChange={(value) =>
@@ -256,7 +257,7 @@ const Opportunities = () => {
                           }
                         >
                           <SelectTrigger id="targetCompany">
-                            <SelectValue placeholder="Select company" />
+                            <SelectValue placeholder="Selecione empresa" />
                           </SelectTrigger>
                           <SelectContent>
                             {groupCompanies
@@ -272,7 +273,7 @@ const Opportunities = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="targetCompanyName">Client Company Name</Label>
+                      <Label htmlFor="targetCompanyName">Nome da Empresa Cliente</Label>
                       <Input
                         id="targetCompanyName"
                         name="targetCompanyName"
@@ -283,7 +284,7 @@ const Opportunities = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="contactName">Contact Name</Label>
+                        <Label htmlFor="contactName">Nome do Contato</Label>
                         <Input
                           id="contactName"
                           name="contactName"
@@ -292,7 +293,7 @@ const Opportunities = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="contactEmail">Contact Email</Label>
+                        <Label htmlFor="contactEmail">Email do Contato</Label>
                         <Input
                           id="contactEmail"
                           name="contactEmail"
@@ -304,7 +305,7 @@ const Opportunities = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="contactPhone">Contact Phone</Label>
+                      <Label htmlFor="contactPhone">Telefone do Contato</Label>
                       <Input
                         id="contactPhone"
                         name="contactPhone"
@@ -314,7 +315,7 @@ const Opportunities = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="notes">Notes</Label>
+                      <Label htmlFor="notes">Observações</Label>
                       <Input
                         id="notes"
                         name="notes"
@@ -329,7 +330,7 @@ const Opportunities = () => {
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="partnerName">Partner Name</Label>
+                        <Label htmlFor="partnerName">Nome do Parceiro</Label>
                         <Select
                           value={newOpportunity.partnerName}
                           onValueChange={(value) =>
@@ -337,7 +338,7 @@ const Opportunities = () => {
                           }
                         >
                           <SelectTrigger id="partnerName">
-                            <SelectValue placeholder="Select partner" />
+                            <SelectValue placeholder="Selecione parceiro" />
                           </SelectTrigger>
                           <SelectContent>
                             {externalPartners.map((partner) => (
@@ -349,7 +350,7 @@ const Opportunities = () => {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="targetCompany">Target Company</Label>
+                        <Label htmlFor="targetCompany">Empresa de Destino</Label>
                         <Select
                           value={newOpportunity.targetCompany}
                           onValueChange={(value) =>
@@ -357,7 +358,7 @@ const Opportunities = () => {
                           }
                         >
                           <SelectTrigger id="targetCompany">
-                            <SelectValue placeholder="Select company" />
+                            <SelectValue placeholder="Selecione empresa" />
                           </SelectTrigger>
                           <SelectContent>
                             {groupCompanies.map((company) => (
@@ -371,7 +372,7 @@ const Opportunities = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="targetCompanyName">Client Company Name</Label>
+                      <Label htmlFor="targetCompanyName">Nome da Empresa Cliente</Label>
                       <Input
                         id="targetCompanyName"
                         name="targetCompanyName"
@@ -382,7 +383,7 @@ const Opportunities = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="contactName">Contact Name</Label>
+                        <Label htmlFor="contactName">Nome do Contato</Label>
                         <Input
                           id="contactName"
                           name="contactName"
@@ -391,7 +392,7 @@ const Opportunities = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="contactEmail">Contact Email</Label>
+                        <Label htmlFor="contactEmail">Email do Contato</Label>
                         <Input
                           id="contactEmail"
                           name="contactEmail"
@@ -403,7 +404,7 @@ const Opportunities = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="contactPhone">Contact Phone</Label>
+                      <Label htmlFor="contactPhone">Telefone do Contato</Label>
                       <Input
                         id="contactPhone"
                         name="contactPhone"
@@ -413,7 +414,7 @@ const Opportunities = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="notes">Notes</Label>
+                      <Label htmlFor="notes">Observações</Label>
                       <Input
                         id="notes"
                         name="notes"
@@ -428,7 +429,7 @@ const Opportunities = () => {
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="sourceCompany">Source Company</Label>
+                        <Label htmlFor="sourceCompany">Empresa de Origem</Label>
                         <Select
                           value={newOpportunity.sourceCompany}
                           onValueChange={(value) =>
@@ -436,7 +437,7 @@ const Opportunities = () => {
                           }
                         >
                           <SelectTrigger id="sourceCompany">
-                            <SelectValue placeholder="Select company" />
+                            <SelectValue placeholder="Selecione empresa" />
                           </SelectTrigger>
                           <SelectContent>
                             {groupCompanies.map((company) => (
@@ -448,7 +449,7 @@ const Opportunities = () => {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="partners">Partner(s)</Label>
+                        <Label htmlFor="partners">Parceiro(s)</Label>
                         <Select
                           value={newOpportunity.partners[0]}
                           onValueChange={(value) =>
@@ -459,7 +460,7 @@ const Opportunities = () => {
                           }
                         >
                           <SelectTrigger id="partners">
-                            <SelectValue placeholder="Select partner" />
+                            <SelectValue placeholder="Selecione parceiro" />
                           </SelectTrigger>
                           <SelectContent>
                             {externalPartners.map((partner) => (
@@ -473,7 +474,7 @@ const Opportunities = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="targetCompanyName">Client Company Name</Label>
+                      <Label htmlFor="targetCompanyName">Nome da Empresa Cliente</Label>
                       <Input
                         id="targetCompanyName"
                         name="targetCompanyName"
@@ -484,7 +485,7 @@ const Opportunities = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="contactName">Contact Name</Label>
+                        <Label htmlFor="contactName">Nome do Contato</Label>
                         <Input
                           id="contactName"
                           name="contactName"
@@ -493,7 +494,7 @@ const Opportunities = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="contactEmail">Contact Email</Label>
+                        <Label htmlFor="contactEmail">Email do Contato</Label>
                         <Input
                           id="contactEmail"
                           name="contactEmail"
@@ -505,7 +506,7 @@ const Opportunities = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="contactPhone">Contact Phone</Label>
+                      <Label htmlFor="contactPhone">Telefone do Contato</Label>
                       <Input
                         id="contactPhone"
                         name="contactPhone"
@@ -515,7 +516,7 @@ const Opportunities = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="notes">Notes</Label>
+                      <Label htmlFor="notes">Observações</Label>
                       <Input
                         id="notes"
                         name="notes"
@@ -532,7 +533,7 @@ const Opportunities = () => {
                   type="submit"
                   onClick={handleCreateOpportunity}
                 >
-                  Create Opportunity
+                  Criar Oportunidade
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -540,13 +541,13 @@ const Opportunities = () => {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filtros */}
       <div className="mb-6 grid grid-cols-1 md:grid-cols-6 gap-4">
         <div className="md:col-span-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
             <Input
-              placeholder="Search opportunities..."
+              placeholder="Buscar oportunidades..."
               className="pl-10"
               value={filter.search}
               onChange={(e) =>
@@ -560,13 +561,13 @@ const Opportunities = () => {
           onValueChange={(value) => setFilter({ ...filter, type: value })}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Type" />
+            <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Types</SelectItem>
-            <SelectItem value="internal">Intragroup</SelectItem>
-            <SelectItem value="incoming">Incoming External</SelectItem>
-            <SelectItem value="outgoing">Outgoing External</SelectItem>
+            <SelectItem value="">Todos os Tipos</SelectItem>
+            <SelectItem value="internal">Intragrupo</SelectItem>
+            <SelectItem value="incoming">Recebida Externa</SelectItem>
+            <SelectItem value="outgoing">Enviada Externa</SelectItem>
           </SelectContent>
         </Select>
         <Select
@@ -577,7 +578,7 @@ const Opportunities = () => {
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
+            <SelectItem value="">Todos os Status</SelectItem>
             {statusOptions.map((status) => (
               <SelectItem key={status} value={status}>
                 {status}
@@ -592,10 +593,10 @@ const Opportunities = () => {
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="Source Company" />
+            <SelectValue placeholder="Empresa de Origem" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Source Companies</SelectItem>
+            <SelectItem value="">Todas as Empresas de Origem</SelectItem>
             {groupCompanies.map((company) => (
               <SelectItem key={company} value={company}>
                 {company}
@@ -610,10 +611,10 @@ const Opportunities = () => {
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="Target Company" />
+            <SelectValue placeholder="Empresa de Destino" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Target Companies</SelectItem>
+            <SelectItem value="">Todas as Empresas de Destino</SelectItem>
             {groupCompanies.map((company) => (
               <SelectItem key={company} value={company}>
                 {company}
@@ -623,61 +624,70 @@ const Opportunities = () => {
         </Select>
       </div>
 
-      {/* Opportunities Table */}
-      <div className="rounded-md border shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Type</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>From</TableHead>
-              <TableHead>To</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Responsible</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {opportunities.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                  No opportunities found with current filters
-                </TableCell>
-              </TableRow>
-            ) : (
-              opportunities.map((opportunity) => (
-                <TableRow
-                  key={opportunity.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => navigate(`/opportunity/${opportunity.id}`)}
-                >
-                  <TableCell>
-                    <OpportunityTypeBadge type={opportunity.type} />
-                  </TableCell>
-                  <TableCell>{opportunity.date}</TableCell>
-                  <TableCell>{opportunity.targetCompanyName}</TableCell>
-                  <TableCell>
-                    {opportunity.type === "internal" || opportunity.type === "outgoing"
-                      ? opportunity.sourceCompany
-                      : opportunity.partnerName}
-                  </TableCell>
-                  <TableCell>
-                    {opportunity.type === "internal" || opportunity.type === "incoming"
-                      ? opportunity.targetCompany
-                      : opportunity.partners.join(", ")}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={opportunity.status} />
-                  </TableCell>
-                  <TableCell>{opportunity.contactName}</TableCell>
-                  <TableCell>{opportunity.responsibleName}</TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {/* Tabela de Oportunidades */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="rounded-md border shadow-sm">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>De</TableHead>
+                    <TableHead>Para</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Contato</TableHead>
+                    <TableHead>Responsável</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {opportunities.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        Nenhuma oportunidade encontrada com os filtros atuais
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    opportunities.map((opportunity) => (
+                      <TableRow
+                        key={opportunity.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => navigate(`/opportunity/${opportunity.id}`)}
+                      >
+                        <TableCell>
+                          <OpportunityTypeBadge type={opportunity.type} />
+                        </TableCell>
+                        <TableCell>{opportunity.date}</TableCell>
+                        <TableCell>{opportunity.targetCompanyName}</TableCell>
+                        <TableCell>
+                          {opportunity.type === "internal" || opportunity.type === "outgoing"
+                            ? opportunity.sourceCompany
+                            : opportunity.partnerName}
+                        </TableCell>
+                        <TableCell>
+                          {opportunity.type === "internal" || opportunity.type === "incoming"
+                            ? opportunity.targetCompany
+                            : opportunity.partners.join(", ")}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={opportunity.status} />
+                        </TableCell>
+                        <TableCell>{opportunity.contactName}</TableCell>
+                        <TableCell>{opportunity.responsibleName}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Lista de todas as oportunidades de parceria. Clique em uma linha para ver detalhes completos.</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </DashboardLayout>
   );
 };

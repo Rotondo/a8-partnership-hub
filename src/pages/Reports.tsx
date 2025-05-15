@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Legend,
   Pie,
   Cell,
@@ -35,10 +35,15 @@ import {
 import { cn } from "@/lib/utils";
 import { Download, Calendar as CalendarIcon, BarChart3, PieChart as PieChartIcon, LineChart as LineChartIcon } from "lucide-react";
 import { mockOpportunities, getMonthlyDataForChart, getQuarterlyData, getOpportunityDistributionByCompany } from "@/data/mockData";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const COLORS = [
-  "#1e88e5", "#26a69a", "#ab47bc", "#ff7043", "#66bb6a", 
-  "#7e57c2", "#ec407a", "#ffa726", "#5c6bc0", "#26c6da"
+// Cores para escala de valores (da mais clara para a mais escura)
+const VALUE_COLORS = [
+  "#EDE9FE", // Valor mais baixo
+  "#DDD6FE",
+  "#C4B5FD", 
+  "#A78BFA",
+  "#8B5CF6"  // Valor mais alto (roxo vívido)
 ];
 
 const Reports = () => {
@@ -50,7 +55,7 @@ const Reports = () => {
   const quarterlyData = getQuarterlyData();
   const opportunityDistribution = getOpportunityDistributionByCompany();
 
-  // Filtered status distribution for pie chart
+  // Distribuição de status filtrada para gráfico de pizza
   const statusData = Object.entries(
     mockOpportunities.reduce(
       (acc, opp) => {
@@ -61,7 +66,7 @@ const Reports = () => {
     )
   ).map(([name, value]) => ({ name, value }));
 
-  // Generate conversion funnel data
+  // Gerar dados do funil de conversão
   const generateFunnelData = () => {
     const totalOpps = mockOpportunities.length;
     const inProgressOpps = mockOpportunities.filter(
@@ -72,18 +77,32 @@ const Reports = () => {
     ).length;
 
     return [
-      { name: "All Opportunities", value: totalOpps },
-      { name: "In Progress", value: inProgressOpps },
-      { name: "Won", value: wonOpps },
+      { name: "Todas Oportunidades", value: totalOpps },
+      { name: "Em Andamento", value: inProgressOpps },
+      { name: "Ganhas", value: wonOpps },
     ];
   };
 
   const funnelData = generateFunnelData();
 
   const handleExport = () => {
-    console.log("Exporting report data...");
-    // In a real app, this would generate and download a report
+    console.log("Exportando dados do relatório...");
+    // Em uma aplicação real, isso geraria e baixaria um relatório
   };
+
+  // Função para escolher a cor baseada no valor (maior valor = cor mais escura)
+  const getColorByValue = (value: number, maxValue: number) => {
+    if (maxValue === 0) return VALUE_COLORS[0]; // Evitar divisão por zero
+    const normalizedValue = value / maxValue; // Valor entre 0 e 1
+    const colorIndex = Math.min(
+      Math.floor(normalizedValue * VALUE_COLORS.length),
+      VALUE_COLORS.length - 1
+    );
+    return VALUE_COLORS[colorIndex];
+  };
+
+  // Encontrar o valor máximo para usar na escala de cores
+  const maxDistributionValue = Math.max(...opportunityDistribution.map(item => item.value));
 
   const renderChart = () => {
     switch (chartType) {
@@ -104,12 +123,12 @@ const Reports = () => {
                 {opportunityDistribution.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
+                    fill={getColorByValue(entry.value, maxDistributionValue)}
                   />
                 ))}
               </Pie>
-              <Tooltip
-                formatter={(value: number) => [`${value} Opportunities`, "Count"]}
+              <RechartsTooltip
+                formatter={(value: number) => [`${value} Oportunidades`, "Quantidade"]}
               />
               <Legend />
             </PieChart>
@@ -126,7 +145,7 @@ const Reports = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip />
+              <RechartsTooltip />
               <Legend />
               <Line
                 type="monotone"
@@ -136,7 +155,7 @@ const Reports = () => {
               />
               <Line type="monotone" dataKey="Lomadee" stroke="#26a69a" />
               <Line type="monotone" dataKey="Monitfy" stroke="#ab47bc" />
-              <Line type="monotone" dataKey="Boone" stroke="#ff7043" />
+              <Line type="monotone" dataKey="B8one" stroke="#ff7043" />
               <Line type="monotone" dataKey="SAIO" stroke="#66bb6a" />
             </LineChart>
           </ResponsiveContainer>
@@ -153,15 +172,15 @@ const Reports = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
-              <Tooltip
-                formatter={(value: number) => [`${value} Opportunities`, "Count"]}
+              <RechartsTooltip
+                formatter={(value: number) => [`${value} Oportunidades`, "Quantidade"]}
               />
               <Legend />
-              <Bar dataKey="value" name="Opportunities">
+              <Bar dataKey="value" name="Oportunidades">
                 {opportunityDistribution.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
+                    fill={getColorByValue(entry.value, maxDistributionValue)}
                   />
                 ))}
               </Bar>
@@ -175,220 +194,275 @@ const Reports = () => {
     <DashboardLayout>
       <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-aeight-dark">Reports</h1>
+          <h1 className="text-3xl font-bold text-aeight-dark">Relatórios</h1>
           <p className="text-muted-foreground mt-2">
-            Analyze partnership data with customizable reports
+            Analise dados de parcerias com relatórios personalizáveis
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExport}>
             <Download className="w-4 h-4 mr-2" />
-            Export Report
+            Exportar Relatório
           </Button>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 mb-8">
-        <DashboardCard title="Report Settings">
-          <div className="space-y-6">
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Select Date Range
-              </label>
-              <div className="grid grid-cols-2 gap-4">
-                <Select
-                  value={periodType}
-                  onValueChange={(value) => setPeriodType(value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select period type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="custom">Custom Date</SelectItem>
-                    <SelectItem value="thisMonth">This Month</SelectItem>
-                    <SelectItem value="last3months">Last 3 Months</SelectItem>
-                    <SelectItem value="last6months">Last 6 Months</SelectItem>
-                    <SelectItem value="thisYear">This Year</SelectItem>
-                    <SelectItem value="lastYear">Last Year</SelectItem>
-                  </SelectContent>
-                </Select>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <DashboardCard title="Configurações do Relatório">
+                  <div className="space-y-6">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">
+                        Selecionar Período
+                      </label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Select
+                          value={periodType}
+                          onValueChange={(value) => setPeriodType(value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo de período" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="custom">Data Personalizada</SelectItem>
+                            <SelectItem value="thisMonth">Este Mês</SelectItem>
+                            <SelectItem value="last3months">Últimos 3 Meses</SelectItem>
+                            <SelectItem value="last6months">Últimos 6 Meses</SelectItem>
+                            <SelectItem value="thisYear">Este Ano</SelectItem>
+                            <SelectItem value="lastYear">Ano Passado</SelectItem>
+                          </SelectContent>
+                        </Select>
 
-                {periodType === "custom" && (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "justify-start text-left font-normal",
-                          !date && "text-muted-foreground"
+                        {periodType === "custom" && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "justify-start text-left font-normal",
+                                  !date && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {date ? format(date, "PPP") : <span>Escolha uma data</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={date}
+                                onSelect={setDate}
+                                initialFocus
+                                className="p-3 pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
                         )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">
+                        Tipo de Gráfico
+                      </label>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant={chartType === "bar" ? "default" : "outline"}
+                          className="flex-1"
+                          onClick={() => setChartType("bar")}
+                        >
+                          <BarChart3 className="h-4 w-4 mr-2" /> Barras
+                        </Button>
+                        <Button
+                          variant={chartType === "line" ? "default" : "outline"}
+                          className="flex-1"
+                          onClick={() => setChartType("line")}
+                        >
+                          <LineChartIcon className="h-4 w-4 mr-2" /> Linhas
+                        </Button>
+                        <Button
+                          variant={chartType === "pie" ? "default" : "outline"}
+                          className="flex-1"
+                          onClick={() => setChartType("pie")}
+                        >
+                          <PieChartIcon className="h-4 w-4 mr-2" /> Pizza
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-6">
+                      <h3 className="font-medium mb-3">Resumo do Relatório</h3>
+                      <div className="bg-muted/40 p-4 rounded-lg space-y-2">
+                        <p className="text-sm">
+                          <span className="font-medium">Total de Oportunidades:</span>{" "}
+                          {mockOpportunities.length}
+                        </p>
+                        <p className="text-sm">
+                          <span className="font-medium">Taxa de Conversão:</span>{" "}
+                          {(
+                            (mockOpportunities.filter((o) => o.status === "Won").length /
+                              mockOpportunities.length) *
+                            100
+                          ).toFixed(1)}
+                          %
+                        </p>
+                        <p className="text-sm">
+                          <span className="font-medium">Empresa Líder:</span>{" "}
+                          {opportunityDistribution.sort((a, b) => b.value - a.value)[0]
+                            ?.name || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </DashboardCard>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Configure o relatório selecionando o período de tempo e o tipo de visualização de dados.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <DashboardCard title="Funil de Conversão">
+                  <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        layout="vertical"
+                        data={funnelData}
+                        margin={{ top: 20, right: 30, left: 70, bottom: 10 }}
                       >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date ? format(date, "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                )}
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="name" type="category" />
+                        <RechartsTooltip />
+                        <Bar
+                          dataKey="value"
+                          name="Oportunidades"
+                          fill="#1e88e5"
+                          label={{ position: "right", formatter: (value) => value }}
+                        >
+                          {funnelData.map((entry, index) => {
+                            const opacity = 1 - index * 0.2;
+                            return <Cell key={`cell-${index}`} fill={`rgba(30, 136, 229, ${opacity})`} />;
+                          })}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </DashboardCard>
               </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Chart Type
-              </label>
-              <div className="flex space-x-2">
-                <Button
-                  variant={chartType === "bar" ? "default" : "outline"}
-                  className="flex-1"
-                  onClick={() => setChartType("bar")}
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" /> Bar
-                </Button>
-                <Button
-                  variant={chartType === "line" ? "default" : "outline"}
-                  className="flex-1"
-                  onClick={() => setChartType("line")}
-                >
-                  <LineChartIcon className="h-4 w-4 mr-2" /> Line
-                </Button>
-                <Button
-                  variant={chartType === "pie" ? "default" : "outline"}
-                  className="flex-1"
-                  onClick={() => setChartType("pie")}
-                >
-                  <PieChartIcon className="h-4 w-4 mr-2" /> Pie
-                </Button>
-              </div>
-            </div>
-
-            <div className="border-t pt-6">
-              <h3 className="font-medium mb-3">Report Summary</h3>
-              <div className="bg-muted/40 p-4 rounded-lg space-y-2">
-                <p className="text-sm">
-                  <span className="font-medium">Total Opportunities:</span>{" "}
-                  {mockOpportunities.length}
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">Conversion Rate:</span>{" "}
-                  {(
-                    (mockOpportunities.filter((o) => o.status === "Won").length /
-                      mockOpportunities.length) *
-                    100
-                  ).toFixed(1)}
-                  %
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium">Leading Company:</span>{" "}
-                  {opportunityDistribution.sort((a, b) => b.value - a.value)[0]
-                    ?.name || "N/A"}
-                </p>
-              </div>
-            </div>
-          </div>
-        </DashboardCard>
-
-        <DashboardCard title="Conversion Funnel">
-          <div className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                layout="vertical"
-                data={funnelData}
-                margin={{ top: 20, right: 30, left: 70, bottom: 10 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" />
-                <Tooltip />
-                <Bar
-                  dataKey="value"
-                  name="Opportunities"
-                  fill="#1e88e5"
-                  label={{ position: "right", formatter: (value) => value }}
-                >
-                  {funnelData.map((entry, index) => {
-                    const opacity = 1 - index * 0.2;
-                    return <Cell key={`cell-${index}`} fill={`rgba(30, 136, 229, ${opacity})`} />;
-                  })}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </DashboardCard>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Visualize o funil de conversão das oportunidades, desde o registro inicial até oportunidades ganhas.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3 mb-8">
-        <DashboardCard title="Total Opportunities" className="col-span-2">
-          {renderChart()}
-        </DashboardCard>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="col-span-2">
+                <DashboardCard title="Total de Oportunidades">
+                  {renderChart()}
+                </DashboardCard>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Distribuição total de oportunidades por empresa. As cores mais escuras indicam valores mais altos.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-        <DashboardCard title="Status Distribution">
-          <div className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={120}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={
-                        entry.name === "Won"
-                          ? "#66bb6a"
-                          : entry.name === "Lost"
-                          ? "#ef5350"
-                          : entry.name === "In Progress"
-                          ? "#ffca28"
-                          : entry.name === "New"
-                          ? "#42a5f5"
-                          : "#bdbdbd"
-                      }
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: number) => [`${value} Opportunities`, "Count"]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </DashboardCard>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <DashboardCard title="Distribuição por Status">
+                  <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
+                        <Pie
+                          data={statusData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={120}
+                          fill="#8884d8"
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {statusData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={
+                                entry.name === "Won"
+                                  ? "#66bb6a"
+                                  : entry.name === "Lost"
+                                  ? "#ef5350"
+                                  : entry.name === "In Progress"
+                                  ? "#ffca28"
+                                  : entry.name === "New"
+                                  ? "#42a5f5"
+                                  : "#bdbdbd"
+                              }
+                            />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip
+                          formatter={(value: number) => [`${value} Oportunidades`, "Quantidade"]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </DashboardCard>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Visualize a distribuição de oportunidades por status (Novas, Em Andamento, Ganhas, Perdidas).</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
-      <DashboardCard title="Quarterly Performance" className="mb-8">
-        <div className="h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={quarterlyData}
-              margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip
-                formatter={(value: number) => [`${value} Opportunities`, "Count"]}
-              />
-              <Legend />
-              <Bar dataKey="value" name="Opportunities" fill="#1e88e5" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </DashboardCard>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <DashboardCard title="Matriz de Intercâmbio Intragrupo" className="mb-8">
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={quarterlyData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <RechartsTooltip
+                        formatter={(value: number) => [`${value} Oportunidades`, "Quantidade"]}
+                      />
+                      <Legend />
+                      <Bar dataKey="value" name="Oportunidades" fill="#8B5CF6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </DashboardCard>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Esta matriz apresenta a troca de oportunidades entre empresas do grupo A&eight. Veja quais empresas estão gerando mais oportunidades e para quem.</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </DashboardLayout>
   );
 };
