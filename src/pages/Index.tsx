@@ -7,37 +7,89 @@ import { BarChart, LineChart, ResponsiveContainer, Bar, XAxis, YAxis, CartesianG
 import DashboardCard from "@/components/ui/dashboard/DashboardCard";
 import StatCard from "@/components/ui/dashboard/StatCard";
 import { BarChart3, PieChart, Users, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { mockOpportunities, getMonthlyDataForChart, getQuarterlyData, getOpportunityDistributionByCompany, getIntraGroupExchangeData } from "@/data/mockData";
+// import { mockOpportunities, getMonthlyDataForChart, getQuarterlyData, getOpportunityDistributionByCompany, getIntraGroupExchangeData } from "@/data/mockData"; // Comentado - usaremos Supabase
+import { supabase } from "@/integrations/supabase/client"; // Adicionado para Supabase
+import { Oportunidade } from "@/types"; // Supondo que Opportunity seja o tipo correto para os dados do Supabase
 
 const Index = () => {
   const [period, setPeriod] = useState<"quarterly" | "monthly">("monthly");
   const [loading, setLoading] = useState(true);
+  const [opportunitiesData, setOpportunitiesData] = useState<Oportunidade[]>([]);
 
-  // simulando o carregamento de dados
+  // Dados para gráficos - serão populados pelo Supabase
+  const [monthlyChartData, setMonthlyChartData] = useState<any[]>([]);
+  const [quarterlyChartData, setQuarterlyChartData] = useState<any[]>([]);
+  const [opportunityDistributionChartData, setOpportunityDistributionChartData] = useState<any[]>([]);
+  const [intraGroupChartData, setIntraGroupChartData] = useState<any>({});
+
+  // Estatísticas
+  const [totalOpportunities, setTotalOpportunities] = useState(0);
+  const [internalOpportunities, setInternalOpportunities] = useState(0);
+  const [incomingOpportunities, setIncomingOpportunities] = useState(0);
+  const [outgoingOpportunities, setOutgoingOpportunities] = useState(0);
+  const [conversionRate, setConversionRate] = useState(0);
+  const [growthRate, setGrowthRate] = useState(0); // Placeholder, precisará de lógica mais complexa
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        const { data: opportunities, error } = await supabase
+          .from("oportunidades")
+          .select("*", { count: "exact" }); // Inclui contagem total
+
+        if (error) {
+          console.error("Erro ao buscar oportunidades:", error);
+          // Tratar erro, talvez mostrar uma mensagem para o usuário
+          setLoading(false);
+          return;
+        }
+
+        if (opportunities) {
+          setOpportunitiesData(opportunities as Oportunidade[]);
+          setTotalOpportunities(opportunities.length); // ou usar a contagem retornada se disponível e correta
+          
+          setInternalOpportunities(opportunities.filter(op => op.tipo_oportunidade === "intragrupo").length);
+          setIncomingOpportunities(opportunities.filter(op => op.tipo_oportunidade === "externa_entrada").length);
+          setOutgoingOpportunities(opportunities.filter(op => op.tipo_oportunidade === "externa_saida").length);
+
+          // Calcular taxa de conversão (exemplo, precisa de status_id ou nome do status)
+          // const wonOpps = opportunities.filter(op => op.status_id === ID_DO_STATUS_GANHA).length;
+          // setConversionRate(opportunities.length > 0 ? Math.round((wonOpps / opportunities.length) * 100) : 0);
+
+          // TODO: Implementar lógica para buscar e processar dados para:
+          // monthlyChartData, quarterlyChartData, opportunityDistributionChartData, intraGroupChartData, growthRate
+          // Exemplo para monthlyChartData (simplificado):
+          // const monthlySummary = {}; // Agrupar por mês e empresa
+          // setMonthlyChartData(transformDataForChart(monthlySummary));
+        }
+      } catch (e) {
+        console.error("Erro inesperado ao buscar dados do dashboard:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
   }, []);
 
-  const monthlyData = getMonthlyDataForChart();
-  const quarterlyData = getQuarterlyData();
-  const opportunityDistribution = getOpportunityDistributionByCompany();
-  const intraGroupData = getIntraGroupExchangeData();
+  // const monthlyData = getMonthlyDataForChart(); // Removido mock
+  // const quarterlyData = getQuarterlyData(); // Removido mock
+  // const opportunityDistribution = getOpportunityDistributionByCompany(); // Removido mock
+  // const intraGroupData = getIntraGroupExchangeData(); // Removido mock
 
-  // Calcula estatísticas
-  const totalOpportunities = mockOpportunities.length;
-  const internalOpportunities = mockOpportunities.filter(opp => opp.type === 'internal').length;
-  const incomingOpportunities = mockOpportunities.filter(opp => opp.type === 'incoming').length;
-  const outgoingOpportunities = mockOpportunities.filter(opp => opp.type === 'outgoing').length;
-  const wonOpportunities = mockOpportunities.filter(opp => opp.status === 'Won').length;
-  const conversionRate = Math.round((wonOpportunities / totalOpportunities) * 100);
+  // Calcula estatísticas - agora são states
+  // const totalOpportunities = mockOpportunities.length; // Removido mock
+  // const internalOpportunities = mockOpportunities.filter(opp => opp.type === 'internal').length; // Removido mock
+  // const incomingOpportunities = mockOpportunities.filter(opp => opp.type === 'incoming').length; // Removido mock
+  // const outgoingOpportunities = mockOpportunities.filter(opp => opp.type === 'outgoing').length; // Removido mock
+  // const wonOpportunities = mockOpportunities.filter(opp => opp.status === 'Won').length; // Removido mock
+  // const conversionRate = Math.round((wonOpportunities / totalOpportunities) * 100); // Removido mock
   
-  const currentQuarterCount = quarterlyData[Math.floor(new Date().getMonth() / 3)].value;
-  const previousQuarterIndex = Math.floor(new Date().getMonth() / 3) - 1;
-  const previousQuarterCount = previousQuarterIndex >= 0 ? quarterlyData[previousQuarterIndex].value : quarterlyData[3].value;
-  const growthRate = Math.round(((currentQuarterCount - previousQuarterCount) / previousQuarterCount) * 100);
+  // const currentQuarterCount = quarterlyData[Math.floor(new Date().getMonth() / 3)].value; // Removido mock
+  // const previousQuarterIndex = Math.floor(new Date().getMonth() / 3) - 1; // Removido mock
+  // const previousQuarterCount = previousQuarterIndex >= 0 ? quarterlyData[previousQuarterIndex].value : quarterlyData[3].value; // Removido mock
+  // const growthRate = Math.round(((currentQuarterCount - previousQuarterCount) / previousQuarterCount) * 100); // Removido mock
 
   return (
     <DashboardLayout>
@@ -52,42 +104,42 @@ const Index = () => {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <StatCard
           title="Total de Oportunidades"
-          value={totalOpportunities}
+          value={loading ? "-" : totalOpportunities}
           description="Todas as oportunidades registradas"
           icon={<BarChart3 className="h-5 w-5" />}
-          trend={growthRate}
+          trend={growthRate} // Manter como placeholder por enquanto
           className="animate-enter"
         />
         <StatCard
           title="Oportunidades Intragrupo"
-          value={internalOpportunities}
+          value={loading ? "-" : internalOpportunities}
           description="Entre empresas A&eight"
           icon={<Users className="h-5 w-5" />}
-          trend={12}
+          // trend={12} // Placeholder
           className="animate-enter"
           style={{ animationDelay: "100ms" }}
         />
         <StatCard
           title="Externas Recebidas"
-          value={incomingOpportunities}
+          value={loading ? "-" : incomingOpportunities}
           description="De parceiros externos"
           icon={<ArrowDownRight className="h-5 w-5" />}
-          trend={-5}
+          // trend={-5} // Placeholder
           className="animate-enter"
           style={{ animationDelay: "200ms" }}
         />
         <StatCard
           title="Externas Enviadas"
-          value={outgoingOpportunities}
+          value={loading ? "-" : outgoingOpportunities}
           description="Para parceiros externos"
           icon={<ArrowUpRight className="h-5 w-5" />}
-          trend={8}
+          // trend={8} // Placeholder
           className="animate-enter"
           style={{ animationDelay: "300ms" }}
         />
       </div>
 
-      {/* Charts Section */}
+      {/* Charts Section - Manter com dados mockados ou placeholders por enquanto */}
       <Tabs defaultValue="volume" className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <TabsList>
@@ -108,14 +160,14 @@ const Index = () => {
         <TabsContent value="volume" className="mt-0">
           <DashboardCard title="Volume de Oportunidades ao Longo do Tempo">
             <div className="h-[400px]">
-              {loading ? (
+              {loading || monthlyChartData.length === 0 ? (
                 <div className="h-full flex items-center justify-center">
-                  <div className="text-muted-foreground">Carregando dados do gráfico...</div>
+                  <div className="text-muted-foreground">Carregando dados do gráfico... (ou sem dados)</div>
                 </div>
               ) : period === "monthly" ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={monthlyData}
+                    data={monthlyChartData} // Usar dados do Supabase
                     margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
@@ -123,7 +175,8 @@ const Index = () => {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="Cryah" stroke="#1e88e5" activeDot={{ r: 8 }} />
+                    {/* As chaves (Cryah, Lomadee, etc.) precisarão ser dinâmicas ou adaptadas à estrutura dos dados do Supabase */}
+                    <Line type="monotone" dataKey="Cryah" stroke="#1e88e5" activeDot={{ r: 8 }} /> 
                     <Line type="monotone" dataKey="Lomadee" stroke="#26a69a" />
                     <Line type="monotone" dataKey="Monitfy" stroke="#ab47bc" />
                     <Line type="monotone" dataKey="B8one" stroke="#ff7043" />
@@ -133,7 +186,7 @@ const Index = () => {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={quarterlyData}
+                    data={quarterlyChartData} // Usar dados do Supabase
                     margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
@@ -153,14 +206,14 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <DashboardCard title="Oportunidades por Empresa">
               <div className="h-[400px]">
-                {loading ? (
+                {loading || opportunityDistributionChartData.length === 0 ? (
                   <div className="h-full flex items-center justify-center">
-                    <div className="text-muted-foreground">Carregando dados do gráfico...</div>
+                    <div className="text-muted-foreground">Carregando dados do gráfico... (ou sem dados)</div>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={opportunityDistribution}
+                      data={opportunityDistributionChartData} // Usar dados do Supabase
                       margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
@@ -189,14 +242,10 @@ const Index = () => {
                           <div className="text-5xl font-bold">{conversionRate}%</div>
                           <div className="text-sm text-muted-foreground mt-2">Taxa de conversão geral</div>
                         </div>
+                        {/* Esta parte precisará ser refeita com dados reais do Supabase */}
                         <div className="space-y-4">
-                          {[
-                            { status: "Nova", count: mockOpportunities.filter(o => o.status === "New").length, color: "bg-blue-500" },
-                            { status: "Em Andamento", count: mockOpportunities.filter(o => o.status === "In Progress").length, color: "bg-yellow-500" },
-                            { status: "Ganha", count: wonOpportunities, color: "bg-green-500" },
-                            { status: "Perdida", count: mockOpportunities.filter(o => o.status === "Lost").length, color: "bg-red-500" },
-                            { status: "Em Espera", count: mockOpportunities.filter(o => o.status === "On Hold").length, color: "bg-gray-500" }
-                          ].map(item => (
+                          {/* Exemplo de como poderia ser com dados reais
+                          {statusDistributionData.map(item => (
                             <div key={item.status} className="flex items-center">
                               <div className={`w-3 h-3 rounded-full ${item.color} mr-2`}></div>
                               <div className="flex-1">
@@ -212,7 +261,7 @@ const Index = () => {
                                 </div>
                               </div>
                             </div>
-                          ))}
+                          ))}*/}
                         </div>
                       </div>
                     </div>
@@ -224,26 +273,31 @@ const Index = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Intragroup Exchange Matrix */}
+      {/* Intragroup Exchange Matrix - Manter com dados mockados ou placeholders por enquanto */}
       <DashboardCard title="Matriz de Intercâmbio Intragrupo" className="mb-8">
         <div className="overflow-x-auto">
+          {loading || Object.keys(intraGroupChartData).length === 0 ? (
+             <div className="h-full flex items-center justify-center py-10">
+                <div className="text-muted-foreground">Carregando dados da matriz... (ou sem dados)</div>
+            </div>
+          ) : (
           <table className="w-full text-sm">
             <thead>
               <tr>
                 <th className="text-left p-3 border-b"></th>
-                {Object.keys(intraGroupData).map((company) => (
+                {Object.keys(intraGroupChartData).map((company) => (
                   <th key={company} className="p-3 border-b text-center">{company}</th>
                 ))}
                 <th className="p-3 border-b text-center">Total Enviado</th>
               </tr>
             </thead>
             <tbody>
-              {Object.entries(intraGroupData).map(([source, targets], idx) => {
-                const totalSent = Object.values(targets).reduce((sum: number, count: number) => sum + count, 0);
+              {Object.entries(intraGroupChartData).map(([source, targets]: [string, any], idx: number) => {
+                const totalSent = Object.values(targets).reduce((sum: any, count: any) => sum + count, 0);
                 return (
                   <tr key={source} className={idx % 2 === 0 ? 'bg-muted/30' : ''}>
                     <td className="p-3 border-b font-medium">{source}</td>
-                    {Object.entries(targets).map(([target, count]) => (
+                    {Object.entries(targets).map(([target, count]:[string, any]) => (
                       <td key={`${source}-${target}`} className="p-3 border-b text-center">
                         {source === target ? (
                           <span className="text-gray-400">–</span>
@@ -264,9 +318,9 @@ const Index = () => {
               })}
               <tr className="bg-muted/50">
                 <td className="p-3 font-medium">Total Recebido</td>
-                {Object.keys(intraGroupData).map((company) => {
-                  const totalReceived = Object.entries(intraGroupData)
-                    .reduce((sum, [source, targets]) => sum + (source !== company ? targets[company] : 0), 0);
+                {Object.keys(intraGroupChartData).map((company) => {
+                  const totalReceived = Object.entries(intraGroupChartData)
+                    .reduce((sum, [source, targets]:[string, any]) => sum + (source !== company ? targets[company] : 0), 0);
                   return (
                     <td key={`received-${company}`} className="p-3 text-center font-medium">
                       {totalReceived}
@@ -277,6 +331,7 @@ const Index = () => {
               </tr>
             </tbody>
           </table>
+          )}
         </div>
       </DashboardCard>
     </DashboardLayout>
