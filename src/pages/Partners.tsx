@@ -18,11 +18,10 @@ import {
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, ArrowLeft, ChevronsLeftRight, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { externalPartners, mockOpportunities } from "@/data/mockData";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-// Renomeando Boone para B8one em todo o código
 const groupCompanies = ["Cryah", "Lomadee", "Monitfy", "B8one", "SAIO"];
 const COLORS = ["#8B5CF6", "#A78BFA", "#C4B5FD", "#DDD6FE", "#EDE9FE"];
 
@@ -191,7 +190,7 @@ const Partners = () => {
                   title="Oportunidades Recebidas"
                   value={groupTotalBalance.received.toString()}
                   trend={groupTotalBalance.received > groupTotalBalance.sent ? "up" : "down"}
-                  trendValue={Math.abs(groupTotalBalance.received - groupTotalBalance.sent).toString()}
+                  trendValue={(Math.abs(groupTotalBalance.received - groupTotalBalance.sent)).toString()}
                   description="vs. enviadas"
                 />
               </div>
@@ -210,7 +209,7 @@ const Partners = () => {
                   title="Oportunidades Enviadas"
                   value={groupTotalBalance.sent.toString()}
                   trend={groupTotalBalance.sent > groupTotalBalance.received ? "up" : "down"}
-                  trendValue={Math.abs(groupTotalBalance.received - groupTotalBalance.sent).toString()}
+                  trendValue={(Math.abs(groupTotalBalance.received - groupTotalBalance.sent)).toString()}
                   description="vs. recebidas"
                 />
               </div>
