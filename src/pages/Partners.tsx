@@ -169,9 +169,9 @@ const Partners = () => {
               <div>
                 <StatCard
                   title="Parceiros Ativos"
-                  value={externalPartners.length.toString()}
+                  value={externalPartners.length}
                   trend="up"
-                  trendValue="2"
+                  trendValue={2}
                   description="vs. mês passado"
                 />
               </div>
@@ -188,9 +188,9 @@ const Partners = () => {
               <div>
                 <StatCard
                   title="Oportunidades Recebidas"
-                  value={groupTotalBalance.received.toString()}
+                  value={groupTotalBalance.received}
                   trend={groupTotalBalance.received > groupTotalBalance.sent ? "up" : "down"}
-                  trendValue={(Math.abs(groupTotalBalance.received - groupTotalBalance.sent)).toString()}
+                  trendValue={Math.abs(groupTotalBalance.received - groupTotalBalance.sent)}
                   description="vs. enviadas"
                 />
               </div>
@@ -207,9 +207,9 @@ const Partners = () => {
               <div>
                 <StatCard
                   title="Oportunidades Enviadas"
-                  value={groupTotalBalance.sent.toString()}
+                  value={groupTotalBalance.sent}
                   trend={groupTotalBalance.sent > groupTotalBalance.received ? "up" : "down"}
-                  trendValue={(Math.abs(groupTotalBalance.received - groupTotalBalance.sent)).toString()}
+                  trendValue={Math.abs(groupTotalBalance.received - groupTotalBalance.sent)}
                   description="vs. recebidas"
                 />
               </div>

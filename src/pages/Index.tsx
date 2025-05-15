@@ -13,7 +13,7 @@ const Index = () => {
   const [period, setPeriod] = useState<"quarterly" | "monthly">("monthly");
   const [loading, setLoading] = useState(true);
 
-  // simulating loading data
+  // simulando o carregamento de dados
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
@@ -26,7 +26,7 @@ const Index = () => {
   const opportunityDistribution = getOpportunityDistributionByCompany();
   const intraGroupData = getIntraGroupExchangeData();
 
-  // Calculate statistics
+  // Calcula estatísticas
   const totalOpportunities = mockOpportunities.length;
   const internalOpportunities = mockOpportunities.filter(opp => opp.type === 'internal').length;
   const incomingOpportunities = mockOpportunities.filter(opp => opp.type === 'incoming').length;
@@ -42,44 +42,44 @@ const Index = () => {
   return (
     <DashboardLayout>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-aeight-dark">Partnership Dashboard</h1>
+        <h1 className="text-3xl font-bold text-aeight-dark">Dashboard de Parcerias</h1>
         <p className="text-muted-foreground mt-2">
-          Monitor and analyze A&eight group's internal and external partnership opportunities
+          Monitore e analise as oportunidades de parceria internas e externas do grupo A&eight
         </p>
       </div>
 
       {/* Stats Section */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <StatCard
-          title="Total Opportunities"
+          title="Total de Oportunidades"
           value={totalOpportunities}
-          description="All registered opportunities"
+          description="Todas as oportunidades registradas"
           icon={<BarChart3 className="h-5 w-5" />}
           trend={growthRate}
           className="animate-enter"
         />
         <StatCard
-          title="Intragroup Opportunities"
+          title="Oportunidades Intragrupo"
           value={internalOpportunities}
-          description="Between A&eight companies"
+          description="Entre empresas A&eight"
           icon={<Users className="h-5 w-5" />}
           trend={12}
           className="animate-enter"
           style={{ animationDelay: "100ms" }}
         />
         <StatCard
-          title="External Incoming"
+          title="Externas Recebidas"
           value={incomingOpportunities}
-          description="From external partners"
+          description="De parceiros externos"
           icon={<ArrowDownRight className="h-5 w-5" />}
           trend={-5}
           className="animate-enter"
           style={{ animationDelay: "200ms" }}
         />
         <StatCard
-          title="External Outgoing"
+          title="Externas Enviadas"
           value={outgoingOpportunities}
-          description="To external partners"
+          description="Para parceiros externos"
           icon={<ArrowUpRight className="h-5 w-5" />}
           trend={8}
           className="animate-enter"
@@ -91,26 +91,26 @@ const Index = () => {
       <Tabs defaultValue="volume" className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <TabsList>
-            <TabsTrigger value="volume">Volume Trends</TabsTrigger>
-            <TabsTrigger value="distribution">Distribution</TabsTrigger>
+            <TabsTrigger value="volume">Tendências de Volume</TabsTrigger>
+            <TabsTrigger value="distribution">Distribuição</TabsTrigger>
           </TabsList>
           <Select value={period} onValueChange={(val: "quarterly" | "monthly") => setPeriod(val)}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select period" />
+              <SelectValue placeholder="Selecione o período" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="monthly">Monthly</SelectItem>
-              <SelectItem value="quarterly">Quarterly</SelectItem>
+              <SelectItem value="monthly">Mensal</SelectItem>
+              <SelectItem value="quarterly">Trimestral</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <TabsContent value="volume" className="mt-0">
-          <DashboardCard title="Opportunity Volume Over Time">
+          <DashboardCard title="Volume de Oportunidades ao Longo do Tempo">
             <div className="h-[400px]">
               {loading ? (
                 <div className="h-full flex items-center justify-center">
-                  <div className="text-muted-foreground">Loading chart data...</div>
+                  <div className="text-muted-foreground">Carregando dados do gráfico...</div>
                 </div>
               ) : period === "monthly" ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -126,7 +126,7 @@ const Index = () => {
                     <Line type="monotone" dataKey="Cryah" stroke="#1e88e5" activeDot={{ r: 8 }} />
                     <Line type="monotone" dataKey="Lomadee" stroke="#26a69a" />
                     <Line type="monotone" dataKey="Monitfy" stroke="#ab47bc" />
-                    <Line type="monotone" dataKey="Boone" stroke="#ff7043" />
+                    <Line type="monotone" dataKey="B8one" stroke="#ff7043" />
                     <Line type="monotone" dataKey="SAIO" stroke="#66bb6a" />
                   </LineChart>
                 </ResponsiveContainer>
@@ -141,7 +141,7 @@ const Index = () => {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="value" name="Opportunities" fill="#1e88e5" />
+                    <Bar dataKey="value" name="Oportunidades" fill="#1e88e5" />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -151,11 +151,11 @@ const Index = () => {
 
         <TabsContent value="distribution" className="mt-0">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <DashboardCard title="Opportunities by Company">
+            <DashboardCard title="Oportunidades por Empresa">
               <div className="h-[400px]">
                 {loading ? (
                   <div className="h-full flex items-center justify-center">
-                    <div className="text-muted-foreground">Loading chart data...</div>
+                    <div className="text-muted-foreground">Carregando dados do gráfico...</div>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
@@ -168,18 +168,18 @@ const Index = () => {
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="value" name="Opportunities" fill="#26a69a" />
+                      <Bar dataKey="value" name="Oportunidades" fill="#26a69a" />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
               </div>
             </DashboardCard>
 
-            <DashboardCard title="Opportunity Status Distribution">
+            <DashboardCard title="Distribuição por Status">
               <div className="h-[400px]">
                 {loading ? (
                   <div className="h-full flex items-center justify-center">
-                    <div className="text-muted-foreground">Loading chart data...</div>
+                    <div className="text-muted-foreground">Carregando dados do gráfico...</div>
                   </div>
                 ) : (
                   <div className="p-4 flex flex-col h-full">
@@ -187,15 +187,15 @@ const Index = () => {
                       <div className="w-full max-w-md mx-auto">
                         <div className="mb-8 text-center">
                           <div className="text-5xl font-bold">{conversionRate}%</div>
-                          <div className="text-sm text-muted-foreground mt-2">Overall conversion rate</div>
+                          <div className="text-sm text-muted-foreground mt-2">Taxa de conversão geral</div>
                         </div>
                         <div className="space-y-4">
                           {[
-                            { status: "New", count: mockOpportunities.filter(o => o.status === "New").length, color: "bg-blue-500" },
-                            { status: "In Progress", count: mockOpportunities.filter(o => o.status === "In Progress").length, color: "bg-yellow-500" },
-                            { status: "Won", count: wonOpportunities, color: "bg-green-500" },
-                            { status: "Lost", count: mockOpportunities.filter(o => o.status === "Lost").length, color: "bg-red-500" },
-                            { status: "On Hold", count: mockOpportunities.filter(o => o.status === "On Hold").length, color: "bg-gray-500" }
+                            { status: "Nova", count: mockOpportunities.filter(o => o.status === "New").length, color: "bg-blue-500" },
+                            { status: "Em Andamento", count: mockOpportunities.filter(o => o.status === "In Progress").length, color: "bg-yellow-500" },
+                            { status: "Ganha", count: wonOpportunities, color: "bg-green-500" },
+                            { status: "Perdida", count: mockOpportunities.filter(o => o.status === "Lost").length, color: "bg-red-500" },
+                            { status: "Em Espera", count: mockOpportunities.filter(o => o.status === "On Hold").length, color: "bg-gray-500" }
                           ].map(item => (
                             <div key={item.status} className="flex items-center">
                               <div className={`w-3 h-3 rounded-full ${item.color} mr-2`}></div>
@@ -225,7 +225,7 @@ const Index = () => {
       </Tabs>
 
       {/* Intragroup Exchange Matrix */}
-      <DashboardCard title="Intragroup Exchange Matrix" className="mb-8">
+      <DashboardCard title="Matriz de Intercâmbio Intragrupo" className="mb-8">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -234,7 +234,7 @@ const Index = () => {
                 {Object.keys(intraGroupData).map((company) => (
                   <th key={company} className="p-3 border-b text-center">{company}</th>
                 ))}
-                <th className="p-3 border-b text-center">Total Sent</th>
+                <th className="p-3 border-b text-center">Total Enviado</th>
               </tr>
             </thead>
             <tbody>
@@ -263,7 +263,7 @@ const Index = () => {
                 );
               })}
               <tr className="bg-muted/50">
-                <td className="p-3 font-medium">Total Received</td>
+                <td className="p-3 font-medium">Total Recebido</td>
                 {Object.keys(intraGroupData).map((company) => {
                   const totalReceived = Object.entries(intraGroupData)
                     .reduce((sum, [source, targets]) => sum + (source !== company ? targets[company] : 0), 0);
