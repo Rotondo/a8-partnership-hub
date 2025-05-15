@@ -1,18 +1,17 @@
-
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { 
-  Sidebar as SidebarComponent, 
-  SidebarContent, 
-  SidebarFooter, 
-  SidebarGroup, 
-  SidebarGroupContent, 
-  SidebarGroupLabel, 
-  SidebarHeader, 
-  SidebarMenu, 
-  SidebarMenuButton, 
-  SidebarMenuItem, 
-  SidebarTrigger 
+import {
+  Sidebar as SidebarComponent,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarTrigger
 } from "@/components/ui/sidebar";
 import { BarChart3, PieChart, Search, Users, FileText, BarChart } from "lucide-react";
 
