@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import DashboardCard from "@/components/ui/dashboard/DashboardCard";
 import {
@@ -44,6 +45,15 @@ const VALUE_COLORS = [
   "#C4B5FD", 
   "#A78BFA",
   "#8B5CF6"  // Valor mais alto (roxo vívido)
+];
+
+// Cores para destacar valores maiores com verde (melhor) até vermelho (pior)
+const PERFORMANCE_COLORS = [
+  "#d0f2c3", // Verde claro (melhor)
+  "#a5e88b",
+  "#6ed350",
+  "#4db625", 
+  "#337f18"  // Verde escuro (melhor)
 ];
 
 const Reports = () => {
@@ -90,15 +100,15 @@ const Reports = () => {
     // Em uma aplicação real, isso geraria e baixaria um relatório
   };
 
-  // Função para escolher a cor baseada no valor (maior valor = cor mais escura)
+  // Função para escolher a cor baseada no valor (maior valor = cor mais escura de verde)
   const getColorByValue = (value: number, maxValue: number) => {
-    if (maxValue === 0) return VALUE_COLORS[0]; // Evitar divisão por zero
+    if (maxValue === 0) return PERFORMANCE_COLORS[0]; // Evitar divisão por zero
     const normalizedValue = value / maxValue; // Valor entre 0 e 1
     const colorIndex = Math.min(
-      Math.floor(normalizedValue * VALUE_COLORS.length),
-      VALUE_COLORS.length - 1
+      Math.floor(normalizedValue * PERFORMANCE_COLORS.length),
+      PERFORMANCE_COLORS.length - 1
     );
-    return VALUE_COLORS[colorIndex];
+    return PERFORMANCE_COLORS[colorIndex];
   };
 
   // Encontrar o valor máximo para usar na escala de cores
@@ -247,7 +257,7 @@ const Reports = () => {
                                 )}
                               >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {date ? format(date, "PPP") : <span>Escolha uma data</span>}
+                                {date ? format(date, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
@@ -256,6 +266,7 @@ const Reports = () => {
                                 selected={date}
                                 onSelect={setDate}
                                 initialFocus
+                                locale={ptBR}
                                 className="p-3 pointer-events-auto"
                               />
                             </PopoverContent>
@@ -377,7 +388,7 @@ const Reports = () => {
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Distribuição total de oportunidades por empresa. As cores mais escuras indicam valores mais altos.</p>
+              <p>Distribuição total de oportunidades por empresa. As cores mais escuras indicam valores mais altos (melhores resultados).</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -451,7 +462,14 @@ const Reports = () => {
                         formatter={(value: number) => [`${value} Oportunidades`, "Quantidade"]}
                       />
                       <Legend />
-                      <Bar dataKey="value" name="Oportunidades" fill="#8B5CF6" />
+                      <Bar dataKey="value" name="Oportunidades">
+                        {quarterlyData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={getColorByValue(entry.value, Math.max(...quarterlyData.map(d => d.value)))}
+                          />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -459,7 +477,7 @@ const Reports = () => {
             </div>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Esta matriz apresenta a troca de oportunidades entre empresas do grupo A&eight. Veja quais empresas estão gerando mais oportunidades e para quem.</p>
+            <p>Esta matriz apresenta a troca de oportunidades entre empresas do grupo A&eight. Quanto mais escura a cor verde, maior o número de oportunidades (melhor desempenho).</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
