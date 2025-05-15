@@ -8,7 +8,7 @@ export const Sidebar = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "bg-sidebar-bg text-sidebar-foreground w-64 min-h-screen flex flex-col transition-all duration-300",
+      "bg-gray-900 text-white w-64 min-h-screen flex flex-col transition-all duration-300",
       className
     )}
     {...props}
@@ -22,7 +22,7 @@ export const SidebarHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <header
     ref={ref}
-    className={cn("bg-sidebar-header px-4 py-3", className)}
+    className={cn("bg-gray-900 px-4 py-3", className)}
     {...props}
   />
 ));
@@ -46,7 +46,7 @@ export const SidebarFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <footer
     ref={ref}
-    className={cn("bg-sidebar-footer px-4 py-3", className)}
+    className={cn("bg-gray-900 px-4 py-3", className)}
     {...props}
   />
 ));
@@ -117,7 +117,7 @@ export const SidebarTrigger = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <button
     ref={ref}
-    className={cn("p-2 rounded hover:bg-sidebar-accent", className)}
+    className={cn("p-2 rounded hover:bg-blue-700", className)}
     {...props}
   />
 ));
