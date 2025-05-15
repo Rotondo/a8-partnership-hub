@@ -1,22 +1,12 @@
-
 import React from "react";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import Sidebar from "@/components/layout/Sidebar";
+import Sidebar from "./Sidebar";
 
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-}
-
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+const DashboardLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <Sidebar />
-        <main className="flex-1 p-6 overflow-auto bg-aeight-gray">
-          {children}
-        </main>
-      </div>
-    </SidebarProvider>
+    <div className="flex min-h-screen bg-muted">
+      <Sidebar />
+      <main className="flex-1 p-6 overflow-y-auto">{children}</main>
+    </div>
   );
 };
 
