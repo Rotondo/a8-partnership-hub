@@ -1,5 +1,6 @@
 import React from "react";
 import Sidebar from "./Sidebar";
+import { Outlet } from "react-router-dom";
 
 const DashboardLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   return (
