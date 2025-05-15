@@ -4,15 +4,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Index from "./pages/Index"; // Página de login/cadastro
+import Index from "./pages/Index";
 import Opportunities from "./pages/Opportunities";
 import OpportunityDetail from "./pages/OpportunityDetail";
 import Partners from "./pages/Partners";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
-import ProtectedRoute from "@/components/auth/ProtectedRoute"; // Componente para rotas protegidas
-import DashboardLayout from "@/components/layout/DashboardLayout"; // Layout do dashboard
+import ProtectedRoute from "@/components/ProtectedRoute";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 const queryClient = new QueryClient();
 
@@ -21,18 +21,18 @@ const App = () => (
     <TooltipProvider>
       <BrowserRouter>
         <Routes>
-          {/* Rota pública para login/cadastro */}
+          {/* Página inicial */}
           <Route path="/" element={<Index />} />
 
           {/* Rotas protegidas dentro do layout do dashboard */}
           <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-            <Route path="/oportunidades" element={<Opportunities />} />
-            <Route path="/oportunidades/:id" element={<OpportunityDetail />} />
-            <Route path="/parceiros" element={<Partners />} />
-            <Route path="/relatorios" element={<Reports />} />
+            <Route path="/opportunities" element={<Opportunities />} />
+            <Route path="/opportunities/:id" element={<OpportunityDetail />} />
+            <Route path="/partners" element={<Partners />} />
+            <Route path="/reports" element={<Reports />} />
           </Route>
 
-          {/* Rota para páginas não encontradas */}
+          {/* Página 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
