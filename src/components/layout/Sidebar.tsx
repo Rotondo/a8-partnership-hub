@@ -36,7 +36,14 @@ const Sidebar = () => {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/" className={({isActive}) => isActive ? "text-white bg-sidebar-accent p-2 rounded-md w-full flex items-center gap-2" : "text-sidebar-foreground hover:text-white p-2 rounded-md w-full flex items-center gap-2"}>
+                  <NavLink 
+                    to="/" 
+                    className={({ isActive }) => 
+                      isActive 
+                        ? "text-white bg-sidebar-accent p-2 rounded-md w-full flex items-center gap-2" 
+                        : "text-sidebar-foreground hover:text-white p-2 rounded-md w-full flex items-center gap-2"
+                    }
+                  >
                     <BarChart3 className="h-4 w-4" />
                     <span>Overview</span>
                   </NavLink>
@@ -44,7 +51,14 @@ const Sidebar = () => {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/opportunities" className={({isActive}) => isActive ? "text-white bg-sidebar-accent p-2 rounded-md w-full flex items-center gap-2" : "text-sidebar-foreground hover:text-white p-2 rounded-md w-full flex items-center gap-2"}>
+                  <NavLink 
+                    to="/opportunities" 
+                    className={({ isActive }) => 
+                      isActive 
+                        ? "text-white bg-sidebar-accent p-2 rounded-md w-full flex items-center gap-2" 
+                        : "text-sidebar-foreground hover:text-white p-2 rounded-md w-full flex items-center gap-2"
+                    }
+                  >
                     <FileText className="h-4 w-4" />
                     <span>Opportunities</span>
                   </NavLink>
@@ -52,7 +66,14 @@ const Sidebar = () => {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/partners" className={({isActive}) => isActive ? "text-white bg-sidebar-accent p-2 rounded-md w-full flex items-center gap-2" : "text-sidebar-foreground hover:text-white p-2 rounded-md w-full flex items-center gap-2"}>
+                  <NavLink 
+                    to="/partners" 
+                    className={({ isActive }) => 
+                      isActive 
+                        ? "text-white bg-sidebar-accent p-2 rounded-md w-full flex items-center gap-2" 
+                        : "text-sidebar-foreground hover:text-white p-2 rounded-md w-full flex items-center gap-2"
+                    }
+                  >
                     <Users className="h-4 w-4" />
                     <span>Partners</span>
                   </NavLink>
@@ -60,7 +81,14 @@ const Sidebar = () => {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/reports" className={({isActive}) => isActive ? "text-white bg-sidebar-accent p-2 rounded-md w-full flex items-center gap-2" : "text-sidebar-foreground hover:text-white p-2 rounded-md w-full flex items-center gap-2"}>
+                  <NavLink 
+                    to="/reports" 
+                    className={({ isActive }) => 
+                      isActive 
+                        ? "text-white bg-sidebar-accent p-2 rounded-md w-full flex items-center gap-2" 
+                        : "text-sidebar-foreground hover:text-white p-2 rounded-md w-full flex items-center gap-2"
+                    }
+                  >
                     <PieChart className="h-4 w-4" />
                     <span>Reports</span>
                   </NavLink>
