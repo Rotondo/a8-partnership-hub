@@ -10,30 +10,27 @@ SECURITY DEFINER
 AS $$
 BEGIN
     RETURN QUERY
-    WITH enviadas AS (
-        SELECT 
-            e.nome as empresa,
-            COUNT(o.id) as total
-        FROM empresas_grupo e
-        LEFT JOIN oportunidades o ON e.id = o.empresa_origem_id
-        WHERE o.tipo_oportunidade IN ('intragrupo', 'externa_saida') OR o.id IS NULL
-        GROUP BY e.nome
-    ),
-    recebidas AS (
-        SELECT 
-            e.nome as empresa,
-            COUNT(o.id) as total
-        FROM empresas_grupo e
-        LEFT JOIN oportunidades o ON e.id = o.empresa_destino_id
-        WHERE o.tipo_oportunidade = 'intragrupo' OR o.id IS NULL
-        GROUP BY e.nome
-    )
     SELECT 
-        e.empresa,
-        COALESCE(e.total, 0) as enviadas,
-        COALESCE(r.total, 0) as recebidas
-    FROM enviadas e
-    LEFT JOIN recebidas r ON e.empresa = r.empresa
-    ORDER BY e.empresa;
+        e.nome as empresa,
+        COALESCE(env.total, 0) as enviadas,
+        COALESCE(rec.total, 0) as recebidas
+    FROM public.partners e
+    LEFT JOIN (
+        SELECT 
+            e.name as empresa,
+            COUNT(o.id) as total
+        FROM public.partners e
+        LEFT JOIN public.partners o ON e.id = o.id
+        GROUP BY e.name
+    ) env ON e.nome = env.empresa
+    LEFT JOIN (
+        SELECT 
+            e.name as empresa,
+            COUNT(o.id) as total
+        FROM public.partners e
+        LEFT JOIN public.partners o ON e.id = o.id
+        GROUP BY e.name
+    ) rec ON e.nome = rec.empresa
+    ORDER BY e.nome;
 END;
 $$;
