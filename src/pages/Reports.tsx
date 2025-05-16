@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Loader2, TrendingUp, TrendingDown, BarChart2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,6 +36,7 @@ const Reports = () => {
 
   // Função para gerar dados de exemplo para testes
   const generateMockData = () => {
+    console.log("Generating mock data due to missing database data");
     // Dados mensais
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const mockMonthlyData = monthNames.map(name => ({
@@ -132,19 +132,6 @@ const Reports = () => {
             console.warn("Nenhum dado retornado pela função get_opportunities_by_company");
           }
           
-          // Dados do funil
-          console.log("Tentando buscar dados da função get_opportunity_funnel...");
-          const { data: funnelData, error: funnelError } = await supabase.rpc('get_opportunity_funnel');
-          
-          if (funnelError) {
-            console.error("Erro ao buscar dados do funil:", funnelError);
-          } else if (funnelData && funnelData.length > 0) {
-            console.log("Dados do funil carregados com sucesso:", funnelData);
-            setFunil(funnelData);
-          } else {
-            console.warn("Nenhum dado retornado pela função get_opportunity_funnel");
-          }
-          
           // Query direta para obter parceiros
           console.log("Consultando tabela de partners...");
           const { data: parceiros, error: parceirosError } = await supabase
@@ -153,6 +140,7 @@ const Reports = () => {
             
           if (parceirosError) {
             console.error("Erro ao consultar parceiros:", parceirosError);
+            throw parceirosError;
           } else {
             console.log("Parceiros carregados com sucesso:", parceiros);
             

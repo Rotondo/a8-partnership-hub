@@ -11,26 +11,26 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT 
-        e.nome as empresa,
-        COALESCE(env.total, 0) as enviadas,
-        COALESCE(rec.total, 0) as recebidas
-    FROM public.partners e
+        p.name as empresa,
+        COUNT(CASE WHEN o.type = 'sent' THEN 1 ELSE NULL END) as enviadas,
+        COUNT(CASE WHEN o.type = 'received' THEN 1 ELSE NULL END) as recebidas
+    FROM public.partners p
     LEFT JOIN (
         SELECT 
-            e.name as empresa,
-            COUNT(o.id) as total
-        FROM public.partners e
-        LEFT JOIN public.partners o ON e.id = o.id
-        GROUP BY e.name
-    ) env ON e.nome = env.empresa
-    LEFT JOIN (
+            partner_id,
+            type
+        FROM public.partners_opportunities
+    ) o ON p.id = o.partner_id
+    GROUP BY p.name
+    ORDER BY p.name;
+    
+    -- If no results, return at least some mock data for development
+    IF NOT FOUND THEN
+        RETURN QUERY
         SELECT 
-            e.name as empresa,
-            COUNT(o.id) as total
-        FROM public.partners e
-        LEFT JOIN public.partners o ON e.id = o.id
-        GROUP BY e.name
-    ) rec ON e.nome = rec.empresa
-    ORDER BY e.nome;
+            'No Data'::text as empresa,
+            0::bigint as enviadas,
+            0::bigint as recebidas;
+    END IF;
 END;
 $$;
