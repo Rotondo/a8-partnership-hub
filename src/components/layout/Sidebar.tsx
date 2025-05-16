@@ -1,117 +1,82 @@
+
 import React from "react";
 import { NavLink } from "react-router-dom";
-import {
-  Sidebar as SidebarComponent,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarTrigger
-} from "@/components/ui/sidebar";
-import { BarChart3, PieChart, Users, FileText, BarChart } from "lucide-react";
+import { PieChart, LineChart, Users, Settings, Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Sidebar = () => {
   return (
-    <SidebarComponent className="h-screen w-64 bg-gray-900 text-white">
-      <SidebarHeader className="p-4">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold">
-            A8
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-white">A&eight</h2>
-            <p className="text-xs text-gray-300">Partnership Dashboard</p>
-          </div>
-        </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink
-                    to="/"
-                    end
-                    className={({ isActive }) =>
-                      isActive
-                        ? "text-white bg-blue-700 p-2 rounded-md w-full flex items-center gap-2"
-                        : "text-gray-300 hover:text-white p-2 rounded-md w-full flex items-center gap-2"
-                    }
-                  >
-                    <BarChart3 className="h-4 w-4" />
-                    <span>Overview</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink
-                    to="/opportunities"
-                    className={({ isActive }) =>
-                      isActive
-                        ? "text-white bg-blue-700 p-2 rounded-md w-full flex items-center gap-2"
-                        : "text-gray-300 hover:text-white p-2 rounded-md w-full flex items-center gap-2"
-                    }
-                  >
-                    <FileText className="h-4 w-4" />
-                    <span>Opportunities</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink
-                    to="/partners"
-                    className={({ isActive }) =>
-                      isActive
-                        ? "text-white bg-blue-700 p-2 rounded-md w-full flex items-center gap-2"
-                        : "text-gray-300 hover:text-white p-2 rounded-md w-full flex items-center gap-2"
-                    }
-                  >
-                    <Users className="h-4 w-4" />
-                    <span>Partners</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink
-                    to="/reports"
-                    className={({ isActive }) =>
-                      isActive
-                        ? "text-white bg-blue-700 p-2 rounded-md w-full flex items-center gap-2"
-                        : "text-gray-300 hover:text-white p-2 rounded-md w-full flex items-center gap-2"
-                    }
-                  >
-                    <PieChart className="h-4 w-4" />
-                    <span>Reports</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter className="p-4 border-t border-gray-800">
-        <div className="flex justify-between items-center">
-          <div className="text-xs text-gray-400">
-            <p>A&eight Group Analytics</p>
-            <p>© 2025 All rights reserved</p>
-          </div>
-          <SidebarTrigger>
-            <span className="sr-only">Toggle sidebar</span>
-            <BarChart className="h-5 w-5 text-gray-400" />
-          </SidebarTrigger>
-        </div>
-      </SidebarFooter>
-    </SidebarComponent>
+    <div className="h-screen w-64 border-r bg-background flex flex-col">
+      <div className="p-4 border-b">
+        <h2 className="text-xl font-bold">A&amp;eight Hub</h2>
+        <p className="text-sm text-muted-foreground">Dashboard de Parcerias</p>
+      </div>
+      
+      <nav className="flex-1 p-4 space-y-1">
+        <NavLink
+          to="/"
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-muted"
+            }`
+          }
+        >
+          <PieChart size={16} />
+          <span>Visão Geral</span>
+        </NavLink>
+        
+        <NavLink
+          to="/opportunities"
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-muted"
+            }`
+          }
+        >
+          <Package size={16} />
+          <span>Oportunidades</span>
+        </NavLink>
+        
+        <NavLink
+          to="/partners"
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-muted"
+            }`
+          }
+        >
+          <Users size={16} />
+          <span>Parceiros</span>
+        </NavLink>
+        
+        <NavLink
+          to="/reports"
+          className={({ isActive }) =>
+            `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+              isActive
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-muted"
+            }`
+          }
+        >
+          <LineChart size={16} />
+          <span>Relatórios</span>
+        </NavLink>
+      </nav>
+      
+      <div className="p-4 border-t mt-auto">
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+          <Settings size={16} />
+          <span>Configurações</span>
+        </Button>
+      </div>
+    </div>
   );
 };
 

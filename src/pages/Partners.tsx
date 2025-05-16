@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { analyticService, empresaGrupoService, parceiroExternoService } from "@/services/supabaseService";
+import { supabase } from "@/integrations/supabase/client";
 import { BalanceData } from "@/types";
 import {
   BarChart,

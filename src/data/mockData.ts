@@ -16,7 +16,7 @@ export interface BalanceData {
 }
 
 // Group companies
-export const groupCompanies: GroupCompany[] = [
+export const groupCompanies: string[] = [
   "Cryah",
   "Lomadee",
   "Monitfy",
@@ -39,7 +39,7 @@ export const externalPartners: string[] = [
 ];
 
 // Opportunity status options
-export const statusOptions: OpportunityStatus[] = [
+export const statusOptions: string[] = [
   "New",
   "In Progress",
   "Won",
@@ -48,7 +48,7 @@ export const statusOptions: OpportunityStatus[] = [
 ];
 
 // Generate mock users
-export const mockUsers: User[] = [
+export const mockUsers: any[] = [
   { id: "u1", name: "João Silva", email: "joao@cryah.com", company: "Cryah", role: "admin" },
   { id: "u2", name: "Maria Costa", email: "maria@lomadee.com", company: "Lomadee", role: "user" },
   { id: "u3", name: "Pedro Santos", email: "pedro@monitfy.com", company: "Monitfy", role: "user" },
@@ -76,8 +76,8 @@ const getRandomPhone = () => {
 };
 
 // Generate internal opportunities
-const generateInternalOpportunities = (count: number): Opportunity[] => {
-  const opportunities: Opportunity[] = [];
+const generateInternalOpportunities = (count: number): any[] => {
+  const opportunities: any[] = [];
 
   for (let i = 0; i < count; i++) {
     const sourceCompanyIndex = Math.floor(Math.random() * groupCompanies.length);
@@ -130,8 +130,8 @@ const generateInternalOpportunities = (count: number): Opportunity[] => {
 };
 
 // Generate incoming opportunities from external partners
-const generateIncomingOpportunities = (count: number): Opportunity[] => {
-  const opportunities: Opportunity[] = [];
+const generateIncomingOpportunities = (count: number): any[] => {
+  const opportunities: any[] = [];
 
   for (let i = 0; i < count; i++) {
     const partnerName = externalPartners[Math.floor(Math.random() * externalPartners.length)];
@@ -177,8 +177,8 @@ const generateIncomingOpportunities = (count: number): Opportunity[] => {
 };
 
 // Generate outgoing opportunities to external partners
-const generateOutgoingOpportunities = (count: number): Opportunity[] => {
-  const opportunities: Opportunity[] = [];
+const generateOutgoingOpportunities = (count: number): any[] => {
+  const opportunities: any[] = [];
 
   for (let i = 0; i < count; i++) {
     // Get 1-3 random partners for each opportunity
@@ -238,20 +238,20 @@ const generateOutgoingOpportunities = (count: number): Opportunity[] => {
 };
 
 // Generate all opportunities
-export const mockOpportunities: Opportunity[] = [
+export const mockOpportunities: any[] = [
   ...generateInternalOpportunities(35),
   ...generateIncomingOpportunities(25),
   ...generateOutgoingOpportunities(20)
 ];
 
 // Calculate monthly opportunity counts for charts
-export const getMonthlyDataForChart = (): LineChartDataPoint[] => {
+export const getMonthlyDataForChart = (): any[] => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const currentYear = new Date().getFullYear();
-  const data: LineChartDataPoint[] = [];
+  const data: any[] = [];
 
   for (let i = 0; i < 12; i++) {
-    const monthData: LineChartDataPoint = { name: months[i] };
+    const monthData: any = { name: months[i] };
     
     // Initialize counts for each company
     groupCompanies.forEach(company => {
@@ -301,7 +301,7 @@ export const getPartnerBalanceData = (): BalanceData[] => {
 };
 
 // Calculate opportunity distribution by company
-export const getOpportunityDistributionByCompany = (): ChartDataPoint[] => {
+export const getOpportunityDistributionByCompany = (): any[] => {
   const distribution: Record<string, number> = {};
 
   groupCompanies.forEach(company => {
@@ -320,9 +320,9 @@ export const getOpportunityDistributionByCompany = (): ChartDataPoint[] => {
 };
 
 // Calculate quarterly opportunity data
-export const getQuarterlyData = (): ChartDataPoint[] => {
+export const getQuarterlyData = (): any[] => {
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-  const data: ChartDataPoint[] = quarters.map(name => ({ name, value: 0 }));
+  const data: any[] = quarters.map(name => ({ name, value: 0 }));
   const currentYear = new Date().getFullYear();
 
   mockOpportunities.forEach(opp => {

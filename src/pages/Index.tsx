@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { empresaGrupoService } from "@/services/supabaseService";
+import { supabase } from "@/integrations/supabase/client";
 import { EmpresaGrupo } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
@@ -18,7 +19,7 @@ import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
 const Index = () => {
   const [empresasGrupo, setEmpresasGrupo] = useState<EmpresaGrupo[]>([]);
-  const [intraGroupChartData, setIntraGroupChartData] = useState<any>({});
+  const [intraGroupChartData, setIntraGroupChartData] = useState<Record<string, Record<string, number>>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,8 +33,13 @@ const Index = () => {
         setEmpresasGrupo(empresas);
         
         // Carrega dados da matriz de indicações
-        const { data: matriz } = await supabase.rpc('get_intragroup_exchange_matrix');
-        setIntraGroupChartData(matriz || {});
+        const { data: matriz, error } = await supabase.rpc('get_intragroup_exchange_matrix');
+        if (error) {
+          console.error("Erro ao carregar matriz de indicações:", error);
+          setError("Falha ao carregar dados da matriz de indicações.");
+        } else {
+          setIntraGroupChartData(matriz || {});
+        }
         
         setLoading(false);
       } catch (err) {

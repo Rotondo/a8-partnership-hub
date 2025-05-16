@@ -30,7 +30,7 @@ BEGIN
     )
     SELECT 
         e.empresa,
-        e.total as enviadas,
+        COALESCE(e.total, 0) as enviadas,
         COALESCE(r.total, 0) as recebidas
     FROM enviadas e
     LEFT JOIN recebidas r ON e.empresa = r.empresa
