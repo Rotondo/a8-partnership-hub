@@ -15,9 +15,11 @@ import {
   getOportunidadeById, 
   updateOportunidade,
   addObservacaoOportunidade,
-  deleteOportunidade
+  deleteOportunidade,
+  getEmpresasGrupo,
+  getParceirosExternos,
+  getStatusOportunidades
 } from '@/services/oportunidades.service';
-import { supabase } from '@/integrations/supabase/client';
 import { 
   OportunidadeCompleta, 
   EmpresaGrupo, 
@@ -25,7 +27,7 @@ import {
   StatusOportunidade,
   Oportunidade,
   ObservacaoOportunidade
-} from '@/integrations/supabase/types';
+} from '@/types/supabase-extended';
 
 const OpportunityDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -94,28 +96,16 @@ const OpportunityDetail = () => {
         setAno(oportunidadeData.ano_oportunidade?.toString() || '');
         
         // Buscar empresas do grupo
-        const { data: empresasData, error: empresasError } = await supabase
-          .from('empresas_grupo')
-          .select('*');
-        
-        if (empresasError) throw empresasError;
-        setEmpresasGrupo(empresasData || []);
+        const empresasData = await getEmpresasGrupo();
+        setEmpresasGrupo(empresasData);
         
         // Buscar parceiros externos
-        const { data: parceirosData, error: parceirosError } = await supabase
-          .from('parceiros_externos')
-          .select('*');
-        
-        if (parceirosError) throw parceirosError;
-        setParceirosExternos(parceirosData || []);
+        const parceirosData = await getParceirosExternos();
+        setParceirosExternos(parceirosData);
         
         // Buscar status de oportunidades
-        const { data: statusData, error: statusError } = await supabase
-          .from('status_oportunidade')
-          .select('*');
-        
-        if (statusError) throw statusError;
-        setStatusOportunidades(statusData || []);
+        const statusData = await getStatusOportunidades();
+        setStatusOportunidades(statusData);
         
         // Definir IDs com base no tipo de oportunidade
         if (oportunidadeData.tipo_oportunidade === 'intragrupo') {
@@ -149,22 +139,26 @@ const OpportunityDetail = () => {
         const status = statusData?.find(s => s.nome_status === oportunidadeData.status);
         if (status) setStatusId(status.id_status.toString());
         
-        // Buscar observações
-        const { data: observacoesData, error: observacoesError } = await supabase
-          .from('observacoes_oportunidade')
-          .select(`
-            id_observacao,
-            id_oportunidade,
-            id_usuario_autor,
-            texto_observacao,
-            data_criacao,
-            usuarios (nome_usuario)
-          `)
-          .eq('id_oportunidade', id)
-          .order('data_criacao', { ascending: false });
-        
-        if (observacoesError) throw observacoesError;
-        setObservacoes(observacoesData || []);
+        // Mock das observações por enquanto
+        const mockObservacoes: ObservacaoOportunidade[] = [
+          {
+            id_observacao: 1,
+            id_oportunidade: parseInt(id),
+            id_usuario: 1,
+            conteudo: "Contato inicial realizado. Cliente interessado nos serviços.",
+            data_criacao: new Date(Date.now() - 86400000).toISOString(),
+            usuarios: { nome_usuario: "João Silva" }
+          },
+          {
+            id_observacao: 2,
+            id_oportunidade: parseInt(id),
+            id_usuario: 2,
+            conteudo: "Reunião agendada para próxima semana.",
+            data_criacao: new Date().toISOString(),
+            usuarios: { nome_usuario: "Maria Souza" }
+          }
+        ];
+        setObservacoes(mockObservacoes);
         
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
@@ -225,16 +219,14 @@ const OpportunityDetail = () => {
       }
       
       // Atualizar oportunidade
-      await updateOportunidade(
+      const updatedOportunidade = await updateOportunidade(
         parseInt(id),
         oportunidadeUpdate,
         lead,
         parceirosDestinoIds.map(id => parseInt(id))
       );
       
-      // Recarregar dados
-      const oportunidadeData = await getOportunidadeById(parseInt(id));
-      setOportunidade(oportunidadeData);
+      setOportunidade(updatedOportunidade);
       
       // Sair do modo de edição
       setIsEditing(false);
@@ -256,31 +248,17 @@ const OpportunityDetail = () => {
       setError(null);
       
       // Adicionar observação
-      await addObservacaoOportunidade(
+      const newObservacao = await addObservacaoOportunidade(
         parseInt(id),
         1, // ID do usuário atual (placeholder)
         novaObservacao.trim()
       );
       
+      // Adicionar ao estado
+      setObservacoes(prev => [newObservacao, ...prev]);
+      
       // Limpar campo
       setNovaObservacao('');
-      
-      // Recarregar observações
-      const { data, error: observacoesError } = await supabase
-        .from('observacoes_oportunidade')
-        .select(`
-          id_observacao,
-          id_oportunidade,
-          id_usuario_autor,
-          texto_observacao,
-          data_criacao,
-          usuarios (nome_usuario)
-        `)
-        .eq('id_oportunidade', id)
-        .order('data_criacao', { ascending: false });
-      
-      if (observacoesError) throw observacoesError;
-      setObservacoes(data || []);
       
     } catch (err) {
       console.error('Erro ao adicionar observação:', err);

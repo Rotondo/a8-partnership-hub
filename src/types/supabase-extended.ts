@@ -76,6 +76,9 @@ export interface ObservacaoOportunidade {
   id_usuario: number;
   conteudo: string;
   data_criacao: string;
+  usuarios?: {
+    nome_usuario: string;
+  };
 }
 
 export interface OportunidadeCompleta extends Oportunidade {
@@ -88,6 +91,7 @@ export interface OportunidadeCompleta extends Oportunidade {
   parceiro_origem?: string;
   parceiros_destino?: string[];
   status: string;
+  nome_responsavel?: string;
 }
 
 // Adapter functions to map between database and application types
@@ -143,10 +147,38 @@ export const getMockOportunidades = (): OportunidadeCompleta[] => [
     id_status_atual: 1,
     tipo_oportunidade: "intragrupo",
     nome_empresa_lead: "Cliente ABC",
+    nome_contato_lead: "João Silva",
+    email_lead: "joao@cliente.com",
+    telefone_lead: "(11) 98765-4321",
     empresa_origem: "Empresa A",
     empresa_destino: "Empresa B",
     status: "Contato",
     nome_projeto: "Projeto Alpha",
-    valor_total_projeto: 50000
+    valor_total_projeto: 50000,
+    nome_responsavel: "Usuário Teste",
+    data_criacao: new Date().toISOString(),
+    data_ultima_modificacao: new Date().toISOString()
+  },
+  {
+    id_oportunidade: 2,
+    data_envio_recebimento: new Date().toISOString(),
+    id_responsavel_envio_recebimento: 2,
+    id_parceiro_origem_externo: 1,
+    id_empresa_destino_grupo: 3,
+    id_lead: 2,
+    id_status_atual: 2,
+    tipo_oportunidade: "externa_entrada",
+    nome_empresa_lead: "Cliente XYZ",
+    nome_contato_lead: "Maria Souza",
+    email_lead: "maria@cliente.com",
+    telefone_lead: "(11) 91234-5678",
+    parceiro_origem: "Parceiro X",
+    empresa_destino: "Empresa C",
+    status: "Negociação",
+    nome_projeto: "Projeto Beta",
+    valor_total_projeto: 75000,
+    nome_responsavel: "Usuário Teste",
+    data_criacao: new Date().toISOString(),
+    data_ultima_modificacao: new Date().toISOString()
   }
 ];

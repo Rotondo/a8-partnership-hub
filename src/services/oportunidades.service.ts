@@ -11,7 +11,8 @@ import {
   getMockEmpresasGrupo,
   getMockParceirosExternos,
   getMockStatusOportunidades,
-  getMockOportunidades
+  getMockOportunidades,
+  ObservacaoOportunidade
 } from '@/types/supabase-extended';
 
 // Main function to get opportunities data
@@ -23,6 +24,20 @@ export const getOportunidadesCompletas = async (): Promise<OportunidadeCompleta[
   } catch (error) {
     console.error('Error fetching opportunities:', error);
     return getMockOportunidades(); // Return mock data on error
+  }
+};
+
+// Get a specific opportunity by ID
+export const getOportunidadeById = async (id: number): Promise<OportunidadeCompleta | null> => {
+  try {
+    console.log('Fetching opportunity by ID:', id);
+    // For now, using mock data
+    const allOportunidades = getMockOportunidades();
+    const oportunidade = allOportunidades.find(op => op.id_oportunidade === id);
+    return oportunidade || null;
+  } catch (error) {
+    console.error('Error fetching opportunity by ID:', error);
+    return null;
   }
 };
 
@@ -111,7 +126,8 @@ export const createOportunidade = async (
     empresa_destino: oportunidade.id_empresa_destino_grupo ? `Empresa ${oportunidade.id_empresa_destino_grupo}` : undefined,
     parceiro_origem: oportunidade.id_parceiro_origem_externo ? `Parceiro ${oportunidade.id_parceiro_origem_externo}` : undefined,
     parceiros_destino: parceirosDestinoIds.map(id => `Parceiro ${id}`),
-    status: "Contato"
+    status: "Contato",
+    nome_responsavel: "Usuário Teste"
   } as OportunidadeCompleta;
   
   return mockOportunidade;
@@ -120,19 +136,59 @@ export const createOportunidade = async (
 // Update an opportunity
 export const updateOportunidade = async (
   id: number,
-  oportunidade: Partial<Oportunidade>
+  oportunidade: Partial<Oportunidade>,
+  lead?: any,
+  parceirosDestinoIds?: number[]
 ): Promise<OportunidadeCompleta> => {
-  console.log('Mocking update opportunity', { id, oportunidade });
+  console.log('Mocking update opportunity', { id, oportunidade, lead, parceirosDestinoIds });
   
   // Return a mock successful update
-  const baseOportunidade = getMockOportunidades()[0];
+  const baseOportunidade = await getOportunidadeById(id) || getMockOportunidades()[0];
   
   return {
     ...baseOportunidade,
     ...oportunidade,
-    id_oportunidade: id,
+    ...(lead && {
+      nome_empresa_lead: lead.nome_empresa_lead,
+      nome_contato_lead: lead.nome_contato_lead,
+      email_lead: lead.email_lead,
+      telefone_lead: lead.telefone_lead,
+    }),
+    ...(parceirosDestinoIds && {
+      parceiros_destino: parceirosDestinoIds.map(id => `Parceiro ${id}`)
+    }),
     data_ultima_modificacao: new Date().toISOString()
   };
+};
+
+// Delete opportunity
+export const deleteOportunidade = async (id: number): Promise<boolean> => {
+  console.log('Mocking delete opportunity', { id });
+  // Simulate successful deletion
+  return true;
+};
+
+// Add observation to opportunity
+export const addObservacaoOportunidade = async (
+  idOportunidade: number,
+  idUsuario: number,
+  conteudo: string
+): Promise<ObservacaoOportunidade> => {
+  console.log('Mocking add observation', { idOportunidade, idUsuario, conteudo });
+  
+  // Return a mock successful creation
+  const mockObservacao: ObservacaoOportunidade = {
+    id_observacao: Date.now(),
+    id_oportunidade: idOportunidade,
+    id_usuario: idUsuario,
+    conteudo: conteudo,
+    data_criacao: new Date().toISOString(),
+    usuarios: {
+      nome_usuario: "Usuário Teste"
+    }
+  };
+  
+  return mockObservacao;
 };
 
 // Export opportunities to CSV
