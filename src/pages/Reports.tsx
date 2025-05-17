@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { Loader2, TrendingUp, TrendingDown, BarChart2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -18,12 +19,11 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 const Reports = () => {
-  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
@@ -110,13 +110,10 @@ const Reports = () => {
       try {
         setLoading(true);
         console.log("Iniciando carregamento de dados...");
-        
-        // Tentar buscar dados do Supabase
         let dadosCarregados = false;
         
         try {
-          // Dados por empresa (usando a função SQL)
-          console.log("Tentando buscar dados da função get_opportunities_by_company...");
+          // Try to fetch company data
           const { data: companyData, error: companyError } = await supabase.rpc('get_opportunities_by_company');
           
           if (companyError) {
@@ -132,8 +129,7 @@ const Reports = () => {
             console.warn("Nenhum dado retornado pela função get_opportunities_by_company");
           }
           
-          // Query direta para obter parceiros
-          console.log("Consultando tabela de partners...");
+          // Query partners table directly
           const { data: parceiros, error: parceirosError } = await supabase
             .from('partners')
             .select('*');
@@ -144,12 +140,12 @@ const Reports = () => {
           } else {
             console.log("Parceiros carregados com sucesso:", parceiros);
             
-            // Se temos parceiros, podemos gerar alguns gráficos com esses dados
             if (parceiros && parceiros.length > 0) {
-              // Gráfico de distribuição por tamanho
-              const distribuicao = parceiros.reduce((acc, partner) => {
-                if (!acc[partner.size]) acc[partner.size] = 0;
-                acc[partner.size]++;
+              // Create distribution chart data based on partner size
+              const distribuicao = parceiros.reduce((acc: Record<string, number>, partner: any) => {
+                const size = partner.size || 'Unknown';
+                if (!acc[size]) acc[size] = 0;
+                acc[size]++;
                 return acc;
               }, {});
               
@@ -160,10 +156,9 @@ const Reports = () => {
               
               setDistributionData(pieData);
               
-              // Indicadores baseados em médias dos campos numéricos
-              const avgLeadPotential = parceiros.reduce((sum, p) => sum + p.lead_potential, 0) / parceiros.length;
-              const avgEngagement = parceiros.reduce((sum, p) => sum + p.engagement, 0) / parceiros.length;
-              const avgInvestment = parceiros.reduce((sum, p) => sum + p.investment_potential, 0) / parceiros.length;
+              // Calculate metrics based on partner data
+              const avgLeadPotential = parceiros.reduce((sum: number, p: any) => sum + (p.lead_potential || 0), 0) / parceiros.length;
+              const avgEngagement = parceiros.reduce((sum: number, p: any) => sum + (p.engagement || 0), 0) / parceiros.length;
               
               setIndicadores([
                 { label: "Parceiros Cadastrados", valor: parceiros.length },
@@ -173,11 +168,18 @@ const Reports = () => {
             }
           }
           
+          // Try to fetch funnel data
+          const { data: funnelData, error: funnelError } = await supabase.rpc('get_opportunity_funnel');
+          
+          if (!funnelError && funnelData && funnelData.length > 0) {
+            setFunil(funnelData);
+          }
+          
         } catch (supabaseError) {
           console.error("Erro durante consultas ao Supabase:", supabaseError);
         }
         
-        // Se nenhum dado foi carregado com sucesso, usar dados mockados
+        // If no data was successfully loaded, use mock data
         if (!dadosCarregados) {
           console.log("Usando dados mockados devido a falhas nas consultas...");
           const mockData = generateMockData();
@@ -208,7 +210,7 @@ const Reports = () => {
         });
         setLoading(false);
         
-        // Em caso de erro, carregamos dados mockados para manter a UI funcional
+        // Load mock data in case of error
         const mockData = generateMockData();
         setMonthlyData(mockData.monthlyData);
         setQuarterlyData(mockData.quarterlyData);

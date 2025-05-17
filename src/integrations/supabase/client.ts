@@ -1,3 +1,4 @@
+
 // Arquivo de cliente Supabase atualizado
 import { createClient } from "@supabase/supabase-js";
 import { Database } from "./types";
@@ -11,13 +12,14 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    storageKey: 'aeight-hub-auth',
   },
 });
 
 // Funções auxiliares para verificar o estado da conexão
 export const checkSupabaseConnection = async () => {
   try {
-    const { data, error } = await supabase.from('empresas_grupo').select('*').limit(1);
+    const { data, error } = await supabase.from('partners').select('*').limit(1);
     if (error) throw error;
     return { success: true, message: "Conexão com Supabase estabelecida com sucesso" };
   } catch (error) {

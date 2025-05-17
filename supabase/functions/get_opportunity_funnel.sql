@@ -35,5 +35,14 @@ BEGIN
     ) o ON o.etapa_ordem = etapa_nome.ordem
     GROUP BY etapa_nome.etapa, etapa_nome.ordem
     ORDER BY etapa_nome.ordem;
+    
+    -- If no results, return default structure
+    IF NOT FOUND THEN
+        RETURN QUERY
+        SELECT 'Indicação'::text as etapa, 0::bigint as total
+        UNION ALL SELECT 'Contato Realizado'::text, 0::bigint
+        UNION ALL SELECT 'Proposta Enviada'::text, 0::bigint
+        UNION ALL SELECT 'Negócio Fechado'::text, 0::bigint;
+    END IF;
 END;
 $$;
