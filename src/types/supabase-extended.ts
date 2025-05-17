@@ -16,6 +16,7 @@ export interface EstatisticaParceiroExterno {
   saldo: number;
 }
 
+// Map database structure to application types
 export interface EmpresaGrupo {
   id_empresa_grupo: number;
   nome_empresa: string;
@@ -88,3 +89,64 @@ export interface OportunidadeCompleta extends Oportunidade {
   parceiros_destino?: string[];
   status: string;
 }
+
+// Adapter functions to map between database and application types
+export const mapPartnerToEmpresaGrupo = (partner: any): EmpresaGrupo => ({
+  id_empresa_grupo: parseInt(partner.id),
+  nome_empresa: partner.name,
+  data_criacao: partner.created_at
+});
+
+export const mapPartnerToParceiroExterno = (partner: any): ParceiroExterno => ({
+  id_parceiro_externo: parseInt(partner.id),
+  nome_parceiro: partner.name,
+  email_parceiro: partner.email || "",
+  telefone_parceiro: partner.phone || "",
+  data_criacao: partner.created_at
+});
+
+export const mapPartnerToStatusOportunidade = (partner: any): StatusOportunidade => ({
+  id_status: parseInt(partner.id),
+  nome_status: partner.name,
+  data_criacao: partner.created_at
+});
+
+// Mock service functions to provide sample data until database is fully set up
+export const getMockEmpresasGrupo = (): EmpresaGrupo[] => [
+  { id_empresa_grupo: 1, nome_empresa: "Empresa A", data_criacao: new Date().toISOString() },
+  { id_empresa_grupo: 2, nome_empresa: "Empresa B", data_criacao: new Date().toISOString() },
+  { id_empresa_grupo: 3, nome_empresa: "Empresa C", data_criacao: new Date().toISOString() }
+];
+
+export const getMockParceirosExternos = (): ParceiroExterno[] => [
+  { id_parceiro_externo: 1, nome_parceiro: "Parceiro X", email_parceiro: "parceirox@example.com", data_criacao: new Date().toISOString() },
+  { id_parceiro_externo: 2, nome_parceiro: "Parceiro Y", email_parceiro: "parceiroy@example.com", data_criacao: new Date().toISOString() },
+  { id_parceiro_externo: 3, nome_parceiro: "Parceiro Z", email_parceiro: "parceiroz@example.com", data_criacao: new Date().toISOString() }
+];
+
+export const getMockStatusOportunidades = (): StatusOportunidade[] => [
+  { id_status: 1, nome_status: "Contato", data_criacao: new Date().toISOString() },
+  { id_status: 2, nome_status: "Negociação", data_criacao: new Date().toISOString() },
+  { id_status: 3, nome_status: "Ganho", data_criacao: new Date().toISOString() },
+  { id_status: 4, nome_status: "Perdido", data_criacao: new Date().toISOString() },
+  { id_status: 5, nome_status: "Sem contato", data_criacao: new Date().toISOString() }
+];
+
+export const getMockOportunidades = (): OportunidadeCompleta[] => [
+  {
+    id_oportunidade: 1,
+    data_envio_recebimento: new Date().toISOString(),
+    id_responsavel_envio_recebimento: 1,
+    id_empresa_origem_grupo: 1,
+    id_empresa_destino_grupo: 2,
+    id_lead: 1,
+    id_status_atual: 1,
+    tipo_oportunidade: "intragrupo",
+    nome_empresa_lead: "Cliente ABC",
+    empresa_origem: "Empresa A",
+    empresa_destino: "Empresa B",
+    status: "Contato",
+    nome_projeto: "Projeto Alpha",
+    valor_total_projeto: 50000
+  }
+];

@@ -19,7 +19,9 @@ import {
   exportOportunidadesToCSV,
   createOportunidade,
   updateOportunidade,
-  getParceirosExternos
+  getEmpresasGrupo,
+  getParceirosExternos,
+  getStatusOportunidades
 } from '@/services/oportunidades.service';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -78,28 +80,16 @@ const Opportunities = () => {
         setOportunidades(oportunidadesData);
         
         // Buscar empresas do grupo
-        const { data: empresasData, error: empresasError } = await supabase
-          .from('empresas_grupo')
-          .select('*');
-        
-        if (empresasError) throw empresasError;
-        setEmpresasGrupo(empresasData || []);
+        const empresasData = await getEmpresasGrupo();
+        setEmpresasGrupo(empresasData);
         
         // Buscar parceiros externos
-        const { data: parceirosData, error: parceirosError } = await supabase
-          .from('parceiros_externos')
-          .select('*');
-        
-        if (parceirosError) throw parceirosError;
-        setParceirosExternos(parceirosData || []);
+        const parceirosData = await getParceirosExternos();
+        setParceirosExternos(parceirosData);
         
         // Buscar status de oportunidades
-        const { data: statusData, error: statusError } = await supabase
-          .from('status_oportunidade')
-          .select('*');
-        
-        if (statusError) throw statusError;
-        setStatusOportunidades(statusData || []);
+        const statusData = await getStatusOportunidades();
+        setStatusOportunidades(statusData);
         
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
