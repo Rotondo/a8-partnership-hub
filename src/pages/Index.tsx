@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { getEstatisticasOportunidadesPorEmpresa, getEstatisticasParceirosExternos } from '@/services/oportunidades.service';
-import { EstatisticaOportunidadePorEmpresa, EstatisticaParceiroExterno } from '@/integrations/supabase/types';
+import { EstatisticaOportunidadePorEmpresa, EstatisticaParceiroExterno } from '@/types/supabase-extended';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 

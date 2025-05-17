@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getParceirosExternos, adicionarParceiroExterno, atualizarParceiroExterno, removerParceiroExterno } from '@/services/oportunidades.service';
-import { ParceiroExterno } from '@/integrations/supabase/types';
+import { ParceiroExterno } from '@/types/supabase-extended';
 
 const Partners = () => {
   const [parceiros, setParceiros] = useState<ParceiroExterno[]>([]);

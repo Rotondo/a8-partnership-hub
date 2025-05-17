@@ -18,7 +18,8 @@ import {
   getOportunidadesCompletas, 
   exportOportunidadesToCSV,
   createOportunidade,
-  updateOportunidade
+  updateOportunidade,
+  getParceirosExternos
 } from '@/services/oportunidades.service';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -27,7 +28,7 @@ import {
   ParceiroExterno, 
   StatusOportunidade,
   Oportunidade
-} from '@/integrations/supabase/types';
+} from '@/types/supabase-extended';
 
 const Opportunities = () => {
   const navigate = useNavigate();
