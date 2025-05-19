@@ -74,7 +74,7 @@ export interface ObservacaoOportunidade {
   id_observacao: number;
   id_oportunidade: number;
   id_usuario: number;
-  conteudo: string;
+  conteudo: string; // This is the correct property name, not texto_observacao
   data_criacao: string;
   usuarios?: {
     nome_usuario: string;

@@ -231,3 +231,44 @@ export const exportOportunidadesToCSV = async (): Promise<string> => {
     return '';
   }
 };
+
+// Add the missing partner functions needed for Partners.tsx
+export const adicionarParceiroExterno = async (parceiro: Partial<ParceiroExterno>): Promise<ParceiroExterno> => {
+  console.log('Mocking add external partner', { parceiro });
+  
+  // Return a mock successful creation
+  const mockParceiro: ParceiroExterno = {
+    id_parceiro_externo: Date.now(),
+    nome_parceiro: parceiro.nome_parceiro || "Novo Parceiro",
+    email_parceiro: parceiro.email_parceiro,
+    telefone_parceiro: parceiro.telefone_parceiro,
+    observacoes: parceiro.observacoes,
+    data_criacao: new Date().toISOString()
+  };
+  
+  return mockParceiro;
+};
+
+export const atualizarParceiroExterno = async (
+  id: number,
+  parceiro: Partial<ParceiroExterno>
+): Promise<ParceiroExterno> => {
+  console.log('Mocking update external partner', { id, parceiro });
+  
+  // Get the current data for this partner
+  const parceiros = getMockParceirosExternos();
+  const currentParceiro = parceiros.find(p => p.id_parceiro_externo === id) || parceiros[0];
+  
+  // Return a mock successful update
+  return {
+    ...currentParceiro,
+    ...parceiro,
+    id_parceiro_externo: id
+  };
+};
+
+export const removerParceiroExterno = async (id: number): Promise<boolean> => {
+  console.log('Mocking delete external partner', { id });
+  // Simulate successful deletion
+  return true;
+};

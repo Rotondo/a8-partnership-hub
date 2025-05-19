@@ -1,168 +1,125 @@
+
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { AlertCircle, ArrowLeft, Calendar, Mail, Phone, User } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { DatePicker } from "@/components/ui/date-picker";
+import { toast } from "@/hooks/use-toast";
 import { 
-  getOportunidadeById, 
-  updateOportunidade,
-  addObservacaoOportunidade,
-  deleteOportunidade,
-  getEmpresasGrupo,
-  getParceirosExternos,
-  getStatusOportunidades
-} from '@/services/oportunidades.service';
+  ArrowLeft, Calendar, Trash2, Send, Building2, Users, User, FileSpreadsheet, 
+  ArrowRightLeft, PanelRight, Clock, Tag, MessageSquare, Pencil
+} from "lucide-react";
+import { getOportunidadeById, getEmpresasGrupo, getParceirosExternos, getStatusOportunidades } from '@/services/oportunidades.service';
+import { updateOportunidade } from '@/services/oportunidades.service';
+import { addObservacaoOportunidade } from '@/services/oportunidades.service';
+import { deleteOportunidade } from '@/services/oportunidades.service';
 import { 
   OportunidadeCompleta, 
   EmpresaGrupo, 
   ParceiroExterno, 
-  StatusOportunidade,
+  StatusOportunidade, 
   Oportunidade,
   ObservacaoOportunidade
 } from '@/types/supabase-extended';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const OpportunityDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
   const navigate = useNavigate();
   const [oportunidade, setOportunidade] = useState<OportunidadeCompleta | null>(null);
-  const [observacoes, setObservacoes] = useState<ObservacaoOportunidade[]>([]);
-  const [empresasGrupo, setEmpresasGrupo] = useState<EmpresaGrupo[]>([]);
-  const [parceirosExternos, setParceirosExternos] = useState<ParceiroExterno[]>([]);
-  const [statusOportunidades, setStatusOportunidades] = useState<StatusOportunidade[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [empresas, setEmpresas] = useState<EmpresaGrupo[]>([]);
+  const [parceiros, setParceiros] = useState<ParceiroExterno[]>([]);
+  const [statusOptions, setStatusOptions] = useState<StatusOportunidade[]>([]);
+  const [observacoes, setObservacoes] = useState<ObservacaoOportunidade[]>([]);
   const [novaObservacao, setNovaObservacao] = useState('');
+  const [editMode, setEditMode] = useState(false);
+  const [formData, setFormData] = useState<Partial<Oportunidade>>({});
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   
-  // Estados para edição
-  const [tipoOportunidade, setTipoOportunidade] = useState<'intragrupo' | 'externa_entrada' | 'externa_saida'>('intragrupo');
-  const [dataEnvio, setDataEnvio] = useState<Date | undefined>(new Date());
-  const [empresaOrigemId, setEmpresaOrigemId] = useState<string>('');
-  const [empresaDestinoId, setEmpresaDestinoId] = useState<string>('');
-  const [parceiroOrigemId, setParceiroOrigemId] = useState<string>('');
-  const [parceirosDestinoIds, setParceirosDestinoIds] = useState<string[]>([]);
-  const [targetCompanyName, setTargetCompanyName] = useState('');
-  const [contactName, setContactName] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [statusId, setStatusId] = useState<string>('');
-  const [descricaoServicos, setDescricaoServicos] = useState('');
-  const [nomeProjeto, setNomeProjeto] = useState('');
-  const [valorPropostaMensal, setValorPropostaMensal] = useState<string>('');
-  const [numeroAportes, setNumeroAportes] = useState<string>('');
-  const [valorTotalProjeto, setValorTotalProjeto] = useState<string>('');
-  const [quarter, setQuarter] = useState<string>('');
-  const [mes, setMes] = useState<string>('');
-  const [ano, setAno] = useState<string>('');
-  
-  // Carregar dados iniciais
+  // Carregar dados da oportunidade
   useEffect(() => {
     const fetchData = async () => {
-      if (!id) return;
-      
       try {
         setLoading(true);
         setError(null);
         
-        // Buscar oportunidade
+        // Testar utilizando mock data até que a API esteja disponível
+        if (!id) {
+          throw new Error('ID da oportunidade não fornecido');
+        }
+        
+        // Carregar dados da oportunidade
         const oportunidadeData = await getOportunidadeById(parseInt(id));
         if (!oportunidadeData) {
           throw new Error('Oportunidade não encontrada');
         }
+        
         setOportunidade(oportunidadeData);
+        setFormData({
+          descricao_servicos: oportunidadeData.descricao_servicos,
+          nome_projeto: oportunidadeData.nome_projeto,
+          valor_proposta_mensal: oportunidadeData.valor_proposta_mensal,
+          numero_aportes: oportunidadeData.numero_aportes,
+          valor_total_projeto: oportunidadeData.valor_total_projeto,
+          quarter_oportunidade: oportunidadeData.quarter_oportunidade,
+          mes_oportunidade: oportunidadeData.mes_oportunidade,
+          ano_oportunidade: oportunidadeData.ano_oportunidade,
+          observacoes: oportunidadeData.observacoes,
+          id_status_atual: oportunidadeData.id_status_atual
+        });
         
-        // Inicializar estados de edição
-        setTipoOportunidade(oportunidadeData.tipo_oportunidade);
-        setDataEnvio(new Date(oportunidadeData.data_envio_recebimento));
-        setTargetCompanyName(oportunidadeData.nome_empresa_lead);
-        setContactName(oportunidadeData.nome_contato_lead || '');
-        setContactEmail(oportunidadeData.email_lead || '');
-        setContactPhone(oportunidadeData.telefone_lead || '');
-        setDescricaoServicos(oportunidadeData.descricao_servicos || '');
-        setNomeProjeto(oportunidadeData.nome_projeto || '');
-        setValorPropostaMensal(oportunidadeData.valor_proposta_mensal?.toString() || '');
-        setNumeroAportes(oportunidadeData.numero_aportes?.toString() || '');
-        setValorTotalProjeto(oportunidadeData.valor_total_projeto?.toString() || '');
-        setQuarter(oportunidadeData.quarter_oportunidade || '');
-        setMes(oportunidadeData.mes_oportunidade?.toString() || '');
-        setAno(oportunidadeData.ano_oportunidade?.toString() || '');
-        
-        // Buscar empresas do grupo
+        // Carregar empresas do grupo
         const empresasData = await getEmpresasGrupo();
-        setEmpresasGrupo(empresasData);
+        setEmpresas(empresasData);
         
-        // Buscar parceiros externos
+        // Carregar parceiros externos
         const parceirosData = await getParceirosExternos();
-        setParceirosExternos(parceirosData);
+        setParceiros(parceirosData);
         
-        // Buscar status de oportunidades
+        // Carregar opções de status
         const statusData = await getStatusOportunidades();
-        setStatusOportunidades(statusData);
+        setStatusOptions(statusData);
         
-        // Definir IDs com base no tipo de oportunidade
-        if (oportunidadeData.tipo_oportunidade === 'intragrupo') {
-          const empresaOrigem = empresasData?.find(e => e.nome_empresa === oportunidadeData.empresa_origem);
-          const empresaDestino = empresasData?.find(e => e.nome_empresa === oportunidadeData.empresa_destino);
+        // Carregar observações da oportunidade
+        try {
+          // Use mock data for observations until the API is available
+          const mockObservacoes: ObservacaoOportunidade[] = [
+            {
+              id_observacao: 1,
+              id_oportunidade: parseInt(id),
+              id_usuario: 1,
+              conteudo: "Primeira observação de exemplo para a oportunidade.",
+              data_criacao: "2023-01-15T10:30:00Z",
+              usuarios: { nome_usuario: "João Silva" }
+            },
+            {
+              id_observacao: 2,
+              id_oportunidade: parseInt(id),
+              id_usuario: 2,
+              conteudo: "Segunda observação de exemplo para acompanhamento do caso.",
+              data_criacao: "2023-01-17T14:45:00Z",
+              usuarios: { nome_usuario: "Maria Souza" }
+            }
+          ];
           
-          if (empresaOrigem) setEmpresaOrigemId(empresaOrigem.id_empresa_grupo.toString());
-          if (empresaDestino) setEmpresaDestinoId(empresaDestino.id_empresa_grupo.toString());
-        } else if (oportunidadeData.tipo_oportunidade === 'externa_entrada') {
-          const parceiroOrigem = parceirosData?.find(p => p.nome_parceiro === oportunidadeData.parceiro_origem);
-          const empresaDestino = empresasData?.find(e => e.nome_empresa === oportunidadeData.empresa_destino);
-          
-          if (parceiroOrigem) setParceiroOrigemId(parceiroOrigem.id_parceiro_externo.toString());
-          if (empresaDestino) setEmpresaDestinoId(empresaDestino.id_empresa_grupo.toString());
-        } else if (oportunidadeData.tipo_oportunidade === 'externa_saida') {
-          const empresaOrigem = empresasData?.find(e => e.nome_empresa === oportunidadeData.empresa_origem);
-          
-          if (empresaOrigem) setEmpresaOrigemId(empresaOrigem.id_empresa_grupo.toString());
-          
-          if (oportunidadeData.parceiros_destino && oportunidadeData.parceiros_destino.length > 0) {
-            const parceiroIds = oportunidadeData.parceiros_destino.map(nome => {
-              const parceiro = parceirosData?.find(p => p.nome_parceiro === nome);
-              return parceiro ? parceiro.id_parceiro_externo.toString() : '';
-            }).filter(id => id !== '');
-            
-            setParceirosDestinoIds(parceiroIds);
-          }
+          setObservacoes(mockObservacoes);
+        } catch (obsError) {
+          console.error('Erro ao carregar observações:', obsError);
         }
         
-        // Definir status ID
-        const status = statusData?.find(s => s.nome_status === oportunidadeData.status);
-        if (status) setStatusId(status.id_status.toString());
-        
-        // Mock das observações por enquanto
-        const mockObservacoes: ObservacaoOportunidade[] = [
-          {
-            id_observacao: 1,
-            id_oportunidade: parseInt(id),
-            id_usuario: 1,
-            conteudo: "Contato inicial realizado. Cliente interessado nos serviços.",
-            data_criacao: new Date(Date.now() - 86400000).toISOString(),
-            usuarios: { nome_usuario: "João Silva" }
-          },
-          {
-            id_observacao: 2,
-            id_oportunidade: parseInt(id),
-            id_usuario: 2,
-            conteudo: "Reunião agendada para próxima semana.",
-            data_criacao: new Date().toISOString(),
-            usuarios: { nome_usuario: "Maria Souza" }
-          }
-        ];
-        setObservacoes(mockObservacoes);
-        
       } catch (err) {
-        console.error('Erro ao carregar dados:', err);
-        setError('Falha ao carregar dados. Por favor, tente novamente.');
+        console.error('Erro ao carregar detalhes da oportunidade:', err);
+        setError('Falha ao carregar detalhes da oportunidade. Por favor, tente novamente.');
       } finally {
         setLoading(false);
       }
@@ -171,182 +128,107 @@ const OpportunityDetail = () => {
     fetchData();
   }, [id]);
   
-  // Salvar alterações
-  const handleSaveChanges = async () => {
-    if (!id || !oportunidade) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Preparar dados do lead
-      const lead = {
-        nome_empresa_lead: targetCompanyName,
-        nome_contato_lead: contactName || null,
-        email_lead: contactEmail || null,
-        telefone_lead: contactPhone || null
-      };
-      
-      // Preparar dados da oportunidade
-      const oportunidadeUpdate: Partial<Oportunidade> = {
-        tipo_oportunidade: tipoOportunidade,
-        data_envio_recebimento: dataEnvio?.toISOString() || new Date().toISOString(),
-        id_status_atual: parseInt(statusId),
-        descricao_servicos: descricaoServicos || null,
-        nome_projeto: nomeProjeto || null,
-        valor_proposta_mensal: valorPropostaMensal ? parseFloat(valorPropostaMensal) : null,
-        numero_aportes: numeroAportes ? parseInt(numeroAportes) : null,
-        valor_total_projeto: valorTotalProjeto ? parseFloat(valorTotalProjeto) : null,
-        quarter_oportunidade: quarter || null,
-        mes_oportunidade: mes ? parseInt(mes) : null,
-        ano_oportunidade: ano ? parseInt(ano) : null
-      };
-      
-      // Definir origem e destino com base no tipo de oportunidade
-      if (tipoOportunidade === 'intragrupo') {
-        oportunidadeUpdate.id_empresa_origem_grupo = parseInt(empresaOrigemId);
-        oportunidadeUpdate.id_empresa_destino_grupo = parseInt(empresaDestinoId);
-        oportunidadeUpdate.id_parceiro_origem_externo = null;
-      } else if (tipoOportunidade === 'externa_entrada') {
-        oportunidadeUpdate.id_parceiro_origem_externo = parseInt(parceiroOrigemId);
-        oportunidadeUpdate.id_empresa_destino_grupo = parseInt(empresaDestinoId);
-        oportunidadeUpdate.id_empresa_origem_grupo = null;
-      } else if (tipoOportunidade === 'externa_saida') {
-        oportunidadeUpdate.id_empresa_origem_grupo = parseInt(empresaOrigemId);
-        oportunidadeUpdate.id_empresa_destino_grupo = null;
-        oportunidadeUpdate.id_parceiro_origem_externo = null;
-        // parceirosDestinoIds são tratados separadamente
-      }
-      
-      // Atualizar oportunidade
-      const updatedOportunidade = await updateOportunidade(
-        parseInt(id),
-        oportunidadeUpdate,
-        lead,
-        parceirosDestinoIds.map(id => parseInt(id))
-      );
-      
-      setOportunidade(updatedOportunidade);
-      
-      // Sair do modo de edição
-      setIsEditing(false);
-      
-    } catch (err) {
-      console.error('Erro ao salvar alterações:', err);
-      setError('Falha ao salvar alterações. Por favor, tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  // Adicionar observação
+  // Função para adicionar uma nova observação
   const handleAddObservacao = async () => {
-    if (!id || !novaObservacao.trim()) return;
+    if (!novaObservacao.trim() || !oportunidade) {
+      return;
+    }
     
     try {
-      setLoading(true);
-      setError(null);
+      // ID do usuário atual (simulado)
+      const idUsuario = 1;
       
-      // Adicionar observação
-      const newObservacao = await addObservacaoOportunidade(
-        parseInt(id),
-        1, // ID do usuário atual (placeholder)
+      // Adicionar nova observação
+      const novaObs = await addObservacaoOportunidade(
+        oportunidade.id_oportunidade,
+        idUsuario,
         novaObservacao.trim()
       );
       
-      // Adicionar ao estado
-      setObservacoes(prev => [newObservacao, ...prev]);
-      
-      // Limpar campo
+      // Atualizar estado local
+      setObservacoes([novaObs, ...observacoes]);
       setNovaObservacao('');
+      
+      toast({
+        title: "Observação adicionada",
+        description: "Sua observação foi adicionada com sucesso.",
+      });
       
     } catch (err) {
       console.error('Erro ao adicionar observação:', err);
-      setError('Falha ao adicionar observação. Por favor, tente novamente.');
-    } finally {
-      setLoading(false);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Falha ao adicionar a observação. Tente novamente.",
+      });
     }
   };
   
-  // Excluir oportunidade
-  const handleDeleteOportunidade = async () => {
-    if (!id || !window.confirm('Tem certeza que deseja excluir esta oportunidade? Esta ação não pode ser desfeita.')) return;
+  // Função para salvar alterações na oportunidade
+  const handleSaveChanges = async () => {
+    if (!oportunidade) return;
     
     try {
-      setLoading(true);
-      setError(null);
+      // Atualizar oportunidade
+      const updatedOpportunity = await updateOportunidade(
+        oportunidade.id_oportunidade,
+        formData
+      );
       
-      // Excluir oportunidade
-      await deleteOportunidade(parseInt(id));
+      // Atualizar estado local
+      setOportunidade(updatedOpportunity);
+      setEditMode(false);
       
-      // Redirecionar para lista de oportunidades
-      navigate('/oportunidades');
+      toast({
+        title: "Alterações salvas",
+        description: "As alterações foram salvas com sucesso.",
+      });
+      
+    } catch (err) {
+      console.error('Erro ao salvar alterações:', err);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Falha ao salvar as alterações. Tente novamente.",
+      });
+    }
+  };
+  
+  // Função para excluir oportunidade
+  const handleDeleteOpportunity = async () => {
+    if (!oportunidade) return;
+    
+    try {
+      await deleteOportunidade(oportunidade.id_oportunidade);
+      
+      toast({
+        title: "Oportunidade excluída",
+        description: "A oportunidade foi excluída com sucesso.",
+      });
+      
+      // Navegar de volta para a lista de oportunidades
+      navigate('/opportunities');
       
     } catch (err) {
       console.error('Erro ao excluir oportunidade:', err);
-      setError('Falha ao excluir oportunidade. Por favor, tente novamente.');
-    } finally {
-      setLoading(false);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Falha ao excluir a oportunidade. Tente novamente.",
+      });
+      setShowConfirmDelete(false);
     }
   };
   
-  // Renderizar status com cores
-  const renderStatusBadge = (status: string) => {
-    let color = 'bg-gray-500';
-    
-    switch (status.toLowerCase()) {
-      case 'contato':
-        color = 'bg-blue-500';
-        break;
-      case 'negociação':
-        color = 'bg-yellow-500';
-        break;
-      case 'ganho':
-        color = 'bg-green-500';
-        break;
-      case 'perdido':
-        color = 'bg-red-500';
-        break;
-      case 'sem contato':
-        color = 'bg-gray-500';
-        break;
-    }
-    
-    return (
-      <Badge className={`${color} text-white`}>
-        {status}
-      </Badge>
-    );
+  // Função para lidar com mudanças nos campos do formulário
+  const handleFormChange = (field: string, value: any) => {
+    setFormData({
+      ...formData,
+      [field]: value
+    });
   };
   
-  // Renderizar tipo de oportunidade
-  const renderTipoBadge = (tipo: string) => {
-    let color = '';
-    let label = '';
-    
-    switch (tipo) {
-      case 'intragrupo':
-        color = 'bg-purple-500';
-        label = 'Intragrupo';
-        break;
-      case 'externa_entrada':
-        color = 'bg-green-500';
-        label = 'Externa (Entrada)';
-        break;
-      case 'externa_saida':
-        color = 'bg-blue-500';
-        label = 'Externa (Saída)';
-        break;
-    }
-    
-    return (
-      <Badge className={`${color} text-white`}>
-        {label}
-      </Badge>
-    );
-  };
-  
-  if (loading && !oportunidade) {
+  if (loading) {
     return (
       <div className="container mx-auto py-6">
         <div className="flex justify-center items-center h-64">
@@ -356,60 +238,75 @@ const OpportunityDetail = () => {
     );
   }
   
-  if (error && !oportunidade) {
+  if (error || !oportunidade) {
     return (
       <div className="container mx-auto py-6">
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Erro</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-        <Button onClick={() => navigate('/oportunidades')} className="flex items-center gap-2">
-          <ArrowLeft size={16} />
-          Voltar para Oportunidades
-        </Button>
+        <div className="bg-destructive/15 text-destructive p-4 rounded-md">
+          <h3 className="font-medium">Erro</h3>
+          <p>{error || 'Oportunidade não encontrada'}</p>
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={() => navigate('/opportunities')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar para a lista
+          </Button>
+        </div>
       </div>
     );
   }
   
-  if (!oportunidade) {
-    return (
-      <div className="container mx-auto py-6">
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Erro</AlertTitle>
-          <AlertDescription>Oportunidade não encontrada</AlertDescription>
-        </Alert>
-        <Button onClick={() => navigate('/oportunidades')} className="flex items-center gap-2">
-          <ArrowLeft size={16} />
-          Voltar para Oportunidades
-        </Button>
-      </div>
-    );
-  }
+  const statusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'contato': return 'bg-blue-500';
+      case 'negociação': return 'bg-amber-500';
+      case 'ganho': return 'bg-green-500';
+      case 'perdido': return 'bg-red-500';
+      case 'sem contato': return 'bg-gray-500';
+      default: return 'bg-slate-500';
+    }
+  };
+  
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: ptBR });
+    } catch (e) {
+      return dateString;
+    }
+  };
+  
+  const tipoOportunidadeLabel = (tipo: string) => {
+    switch (tipo) {
+      case 'intragrupo': return 'Intragrupo';
+      case 'externa_entrada': return 'Externa (Entrada)';
+      case 'externa_saida': return 'Externa (Saída)';
+      default: return tipo;
+    }
+  };
   
   return (
     <div className="container mx-auto py-6">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/oportunidades')}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft size={16} />
-            Voltar
+          <Button variant="outline" size="icon" onClick={() => navigate('/opportunities')}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-3xl font-bold">
-            Oportunidade #{oportunidade.id_oportunidade}
-          </h1>
-          {renderTipoBadge(oportunidade.tipo_oportunidade)}
-          {renderStatusBadge(oportunidade.status)}
+          <div>
+            <h1 className="text-3xl font-bold">{oportunidade.nome_projeto || 'Oportunidade sem título'}</h1>
+            <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <span>
+                Criada em {formatDate(oportunidade.data_criacao || '')}
+              </span>
+            </div>
+          </div>
         </div>
         <div className="flex gap-2">
-          {isEditing ? (
+          {editMode ? (
             <>
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
+              <Button variant="outline" onClick={() => setEditMode(false)}>
                 Cancelar
               </Button>
               <Button onClick={handleSaveChanges}>
@@ -418,10 +315,15 @@ const OpportunityDetail = () => {
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => setIsEditing(true)}>
+              <Button variant="outline" onClick={() => setEditMode(true)}>
+                <Pencil className="h-4 w-4 mr-2" />
                 Editar
               </Button>
-              <Button variant="destructive" onClick={handleDeleteOportunidade}>
+              <Button 
+                variant="destructive" 
+                onClick={() => setShowConfirmDelete(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
                 Excluir
               </Button>
             </>
@@ -429,216 +331,162 @@ const OpportunityDetail = () => {
         </div>
       </div>
       
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Erro</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+      {/* Modal de confirmação de exclusão */}
+      {showConfirmDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-[400px]">
+            <CardHeader>
+              <CardTitle>Confirmar exclusão</CardTitle>
+              <CardDescription>
+                Tem certeza que deseja excluir esta oportunidade? Esta ação não pode ser desfeita.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowConfirmDelete(false)}>
+                Cancelar
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteOpportunity}>
+                Excluir Oportunidade
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
       )}
       
+      {/* Conteúdo principal */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid grid-cols-3 mb-4">
-              <TabsTrigger value="details">Detalhes</TabsTrigger>
-              <TabsTrigger value="project">Projeto</TabsTrigger>
-              <TabsTrigger value="financial">Financeiro</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="details">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Detalhes da Oportunidade</CardTitle>
-                  <CardDescription>Informações básicas sobre a oportunidade</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {isEditing ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="tipoOportunidade">Tipo de Oportunidade</Label>
-                        <Select 
-                          value={tipoOportunidade} 
-                          onValueChange={(value) => setTipoOportunidade(value as any)}
-                        >
-                          <SelectTrigger id="tipoOportunidade">
-                            <SelectValue placeholder="Selecione o tipo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="intragrupo">Intragrupo</SelectItem>
-                            <SelectItem value="externa_entrada">Externa (Entrada)</SelectItem>
-                            <SelectItem value="externa_saida">Externa (Saída)</SelectItem>
-                          </SelectContent>
-                        </Select>
+        {/* Coluna da esquerda - Detalhes da oportunidade */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle>Detalhes da Oportunidade</CardTitle>
+                <Badge 
+                  className={`${statusColor(oportunidade.status)}`}
+                >
+                  {oportunidade.status}
+                </Badge>
+              </div>
+              <Badge variant="outline" className="mt-2">
+                {tipoOportunidadeLabel(oportunidade.tipo_oportunidade)}
+              </Badge>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Lead</h3>
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{oportunidade.nome_empresa_lead}</span>
+                </div>
+                {oportunidade.nome_contato_lead && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>{oportunidade.nome_contato_lead}</span>
+                  </div>
+                )}
+                {oportunidade.email_lead && (
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Email: {oportunidade.email_lead}
+                  </div>
+                )}
+                {oportunidade.telefone_lead && (
+                  <div className="text-sm text-muted-foreground">
+                    Telefone: {oportunidade.telefone_lead}
+                  </div>
+                )}
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Fluxo da Oportunidade</h3>
+                {oportunidade.tipo_oportunidade === 'intragrupo' && (
+                  <div className="flex items-center gap-2">
+                    <ArrowRightLeft className="h-5 w-5 text-muted-foreground rotate-90 lg:rotate-0" />
+                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-2">
+                      <div className="p-3 bg-accent rounded-md">
+                        <div className="text-xs text-muted-foreground">De:</div>
+                        <div className="font-medium">{oportunidade.empresa_origem}</div>
                       </div>
-                      
+                      <div className="p-3 bg-accent rounded-md">
+                        <div className="text-xs text-muted-foreground">Para:</div>
+                        <div className="font-medium">{oportunidade.empresa_destino}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {oportunidade.tipo_oportunidade === 'externa_entrada' && (
+                  <div className="flex items-center gap-2">
+                    <ArrowRightLeft className="h-5 w-5 text-muted-foreground rotate-90 lg:rotate-0" />
+                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-2">
+                      <div className="p-3 bg-accent rounded-md">
+                        <div className="text-xs text-muted-foreground">De:</div>
+                        <div className="font-medium">{oportunidade.parceiro_origem}</div>
+                      </div>
+                      <div className="p-3 bg-accent rounded-md">
+                        <div className="text-xs text-muted-foreground">Para:</div>
+                        <div className="font-medium">{oportunidade.empresa_destino}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {oportunidade.tipo_oportunidade === 'externa_saida' && (
+                  <div className="flex items-center gap-2">
+                    <ArrowRightLeft className="h-5 w-5 text-muted-foreground rotate-90 lg:rotate-0" />
+                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-2">
+                      <div className="p-3 bg-accent rounded-md">
+                        <div className="text-xs text-muted-foreground">De:</div>
+                        <div className="font-medium">{oportunidade.empresa_origem}</div>
+                      </div>
+                      <div className="p-3 bg-accent rounded-md">
+                        <div className="text-xs text-muted-foreground">Para:</div>
+                        <div className="font-medium">
+                          {oportunidade.parceiros_destino?.join(', ') || '-'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mt-4">
+                  <div className="text-xs text-muted-foreground">Responsável:</div>
+                  <div className="font-medium">{oportunidade.nome_responsavel || '-'}</div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Informações do Projeto - Editáveis */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">Detalhes do Projeto</h3>
+                {editMode ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label htmlFor="dataEnvio">Data de Envio/Recebimento</Label>
-                        <DatePicker 
-                          date={dataEnvio} 
-                          setDate={setDataEnvio} 
-                          className="w-full"
+                        <Label htmlFor="nome_projeto">Nome do Projeto</Label>
+                        <Input 
+                          id="nome_projeto"
+                          value={formData.nome_projeto || ''}
+                          onChange={(e) => handleFormChange('nome_projeto', e.target.value)}
                         />
                       </div>
-                      
-                      {tipoOportunidade === 'intragrupo' && (
-                        <>
-                          <div className="space-y-2">
-                            <Label htmlFor="empresaOrigem">Empresa de Origem</Label>
-                            <Select 
-                              value={empresaOrigemId} 
-                              onValueChange={setEmpresaOrigemId}
-                            >
-                              <SelectTrigger id="empresaOrigem">
-                                <SelectValue placeholder="Selecione a empresa" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {empresasGrupo.map((empresa) => (
-                                  <SelectItem 
-                                    key={empresa.id_empresa_grupo} 
-                                    value={empresa.id_empresa_grupo.toString()}
-                                  >
-                                    {empresa.nome_empresa}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor="empresaDestino">Empresa de Destino</Label>
-                            <Select 
-                              value={empresaDestinoId} 
-                              onValueChange={setEmpresaDestinoId}
-                            >
-                              <SelectTrigger id="empresaDestino">
-                                <SelectValue placeholder="Selecione a empresa" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {empresasGrupo.map((empresa) => (
-                                  <SelectItem 
-                                    key={empresa.id_empresa_grupo} 
-                                    value={empresa.id_empresa_grupo.toString()}
-                                  >
-                                    {empresa.nome_empresa}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </>
-                      )}
-                      
-                      {tipoOportunidade === 'externa_entrada' && (
-                        <>
-                          <div className="space-y-2">
-                            <Label htmlFor="parceiroOrigem">Parceiro de Origem</Label>
-                            <Select 
-                              value={parceiroOrigemId} 
-                              onValueChange={setParceiroOrigemId}
-                            >
-                              <SelectTrigger id="parceiroOrigem">
-                                <SelectValue placeholder="Selecione o parceiro" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {parceirosExternos.map((parceiro) => (
-                                  <SelectItem 
-                                    key={parceiro.id_parceiro_externo} 
-                                    value={parceiro.id_parceiro_externo.toString()}
-                                  >
-                                    {parceiro.nome_parceiro}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor="empresaDestino">Empresa de Destino</Label>
-                            <Select 
-                              value={empresaDestinoId} 
-                              onValueChange={setEmpresaDestinoId}
-                            >
-                              <SelectTrigger id="empresaDestino">
-                                <SelectValue placeholder="Selecione a empresa" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {empresasGrupo.map((empresa) => (
-                                  <SelectItem 
-                                    key={empresa.id_empresa_grupo} 
-                                    value={empresa.id_empresa_grupo.toString()}
-                                  >
-                                    {empresa.nome_empresa}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </>
-                      )}
-                      
-                      {tipoOportunidade === 'externa_saida' && (
-                        <>
-                          <div className="space-y-2">
-                            <Label htmlFor="empresaOrigem">Empresa de Origem</Label>
-                            <Select 
-                              value={empresaOrigemId} 
-                              onValueChange={setEmpresaOrigemId}
-                            >
-                              <SelectTrigger id="empresaOrigem">
-                                <SelectValue placeholder="Selecione a empresa" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {empresasGrupo.map((empresa) => (
-                                  <SelectItem 
-                                    key={empresa.id_empresa_grupo} 
-                                    value={empresa.id_empresa_grupo.toString()}
-                                  >
-                                    {empresa.nome_empresa}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor="parceirosDestino">Parceiros de Destino</Label>
-                            <Select 
-                              value={parceirosDestinoIds[0] || ''} 
-                              onValueChange={(value) => setParceirosDestinoIds([value])}
-                            >
-                              <SelectTrigger id="parceirosDestino">
-                                <SelectValue placeholder="Selecione o parceiro" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {parceirosExternos.map((parceiro) => (
-                                  <SelectItem 
-                                    key={parceiro.id_parceiro_externo} 
-                                    value={parceiro.id_parceiro_externo.toString()}
-                                  >
-                                    {parceiro.nome_parceiro}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </>
-                      )}
                       
                       <div className="space-y-2">
                         <Label htmlFor="status">Status</Label>
                         <Select 
-                          value={statusId} 
-                          onValueChange={setStatusId}
+                          value={String(formData.id_status_atual)} 
+                          onValueChange={(value) => handleFormChange('id_status_atual', Number(value))}
                         >
-                          <SelectTrigger id="status">
-                            <SelectValue placeholder="Selecione o status" />
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um status" />
                           </SelectTrigger>
                           <SelectContent>
-                            {statusOportunidades.map((status) => (
+                            {statusOptions.map((status) => (
                               <SelectItem 
                                 key={status.id_status} 
-                                value={status.id_status.toString()}
+                                value={String(status.id_status)}
                               >
                                 {status.nome_status}
                               </SelectItem>
@@ -647,409 +495,353 @@ const OpportunityDetail = () => {
                         </Select>
                       </div>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Tipo</h3>
-                        <p className="text-lg">{renderTipoBadge(oportunidade.tipo_oportunidade)}</p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="valor_mensal">Valor Mensal (R$)</Label>
+                        <Input 
+                          id="valor_mensal"
+                          type="number"
+                          value={formData.valor_proposta_mensal || ''}
+                          onChange={(e) => handleFormChange('valor_proposta_mensal', Number(e.target.value))}
+                        />
                       </div>
                       
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Data</h3>
-                        <p className="text-lg flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(oportunidade.data_envio_recebimento).toLocaleDateString()}
-                        </p>
+                      <div className="space-y-2">
+                        <Label htmlFor="aportes">Número de Aportes</Label>
+                        <Input 
+                          id="aportes"
+                          type="number"
+                          value={formData.numero_aportes || ''}
+                          onChange={(e) => handleFormChange('numero_aportes', Number(e.target.value))}
+                        />
                       </div>
                       
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Origem</h3>
-                        <p className="text-lg">{oportunidade.empresa_origem || oportunidade.parceiro_origem || '-'}</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Destino</h3>
-                        <p className="text-lg">
-                          {oportunidade.empresa_destino || 
-                           (oportunidade.parceiros_destino && oportunidade.parceiros_destino.length > 0 
-                            ? oportunidade.parceiros_destino.join(', ') 
-                            : '-')}
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Responsável</h3>
-                        <p className="text-lg">{oportunidade.nome_responsavel}</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
-                        <p className="text-lg">{renderStatusBadge(oportunidade.status)}</p>
+                      <div className="space-y-2">
+                        <Label htmlFor="valor_total">Valor Total (R$)</Label>
+                        <Input 
+                          id="valor_total"
+                          type="number"
+                          value={formData.valor_total_projeto || ''}
+                          onChange={(e) => handleFormChange('valor_total_projeto', Number(e.target.value))}
+                        />
                       </div>
                     </div>
-                  )}
-                  
-                  <div className="border-t pt-4">
-                    <h3 className="text-lg font-medium mb-2">Dados do Lead</h3>
                     
-                    {isEditing ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="targetCompanyName">Nome da Empresa</Label>
-                          <Input
-                            id="targetCompanyName"
-                            value={targetCompanyName}
-                            onChange={(e) => setTargetCompanyName(e.target.value)}
-                            placeholder="Nome da empresa cliente"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="contactName">Nome do Contato</Label>
-                          <Input
-                            id="contactName"
-                            value={contactName}
-                            onChange={(e) => setContactName(e.target.value)}
-                            placeholder="Nome do contato"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="contactEmail">Email do Contato</Label>
-                          <Input
-                            id="contactEmail"
-                            type="email"
-                            value={contactEmail}
-                            onChange={(e) => setContactEmail(e.target.value)}
-                            placeholder="email@exemplo.com"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="contactPhone">Telefone do Contato</Label>
-                          <Input
-                            id="contactPhone"
-                            value={contactPhone}
-                            onChange={(e) => setContactPhone(e.target.value)}
-                            placeholder="(00) 00000-0000"
-                          />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="quarter">Quarter</Label>
+                        <Select 
+                          value={formData.quarter_oportunidade || ''} 
+                          onValueChange={(value) => handleFormChange('quarter_oportunidade', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um quarter" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Q1">Q1</SelectItem>
+                            <SelectItem value="Q2">Q2</SelectItem>
+                            <SelectItem value="Q3">Q3</SelectItem>
+                            <SelectItem value="Q4">Q4</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="mes">Mês</Label>
+                        <Select 
+                          value={formData.mes_oportunidade?.toString() || ''} 
+                          onValueChange={(value) => handleFormChange('mes_oportunidade', Number(value))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um mês" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                              <SelectItem key={month} value={month.toString()}>
+                                {new Date(0, month - 1).toLocaleString('default', { month: 'long' })}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="ano">Ano</Label>
+                        <Input 
+                          id="ano"
+                          type="number"
+                          value={formData.ano_oportunidade || ''}
+                          onChange={(e) => handleFormChange('ano_oportunidade', Number(e.target.value))}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="descricao_servicos">Descrição dos Serviços</Label>
+                      <Textarea 
+                        id="descricao_servicos"
+                        value={formData.descricao_servicos || ''}
+                        onChange={(e) => handleFormChange('descricao_servicos', e.target.value)}
+                        className="min-h-[100px]"
+                        placeholder="Descreva os serviços oferecidos nesta oportunidade"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="observacoes">Observações Gerais</Label>
+                      <Textarea 
+                        id="observacoes"
+                        value={formData.observacoes || ''}
+                        onChange={(e) => handleFormChange('observacoes', e.target.value)}
+                        className="min-h-[100px]"
+                        placeholder="Adicione observações gerais sobre a oportunidade"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Nome do Projeto</div>
+                        <div className="font-medium">{oportunidade.nome_projeto || '-'}</div>
+                      </div>
+                      
+                      <div>
+                        <div className="text-xs text-muted-foreground">Status</div>
+                        <div>
+                          <Badge className={`${statusColor(oportunidade.status)}`}>
+                            {oportunidade.status}
+                          </Badge>
                         </div>
                       </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Empresa</h3>
-                          <p className="text-lg">{oportunidade.nome_empresa_lead}</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Valor Mensal</div>
+                        <div className="font-medium">
+                          {oportunidade.valor_proposta_mensal 
+                            ? `R$ ${oportunidade.valor_proposta_mensal.toLocaleString('pt-BR')}` 
+                            : '-'}
                         </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Contato</h3>
-                          <p className="text-lg flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            {oportunidade.nome_contato_lead || '-'}
-                          </p>
+                      </div>
+                      
+                      <div>
+                        <div className="text-xs text-muted-foreground">Número de Aportes</div>
+                        <div className="font-medium">{oportunidade.numero_aportes || '-'}</div>
+                      </div>
+                      
+                      <div>
+                        <div className="text-xs text-muted-foreground">Valor Total do Projeto</div>
+                        <div className="font-medium">
+                          {oportunidade.valor_total_projeto 
+                            ? `R$ ${oportunidade.valor_total_projeto.toLocaleString('pt-BR')}` 
+                            : '-'}
                         </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
-                          <p className="text-lg flex items-center gap-2">
-                            <Mail className="h-4 w-4" />
-                            {oportunidade.email_lead || '-'}
-                          </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Quarter</div>
+                        <div className="font-medium">{oportunidade.quarter_oportunidade || '-'}</div>
+                      </div>
+                      
+                      <div>
+                        <div className="text-xs text-muted-foreground">Mês</div>
+                        <div className="font-medium">
+                          {oportunidade.mes_oportunidade 
+                            ? new Date(0, oportunidade.mes_oportunidade - 1).toLocaleString('default', { month: 'long' }) 
+                            : '-'}
                         </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Telefone</h3>
-                          <p className="text-lg flex items-center gap-2">
-                            <Phone className="h-4 w-4" />
-                            {oportunidade.telefone_lead || '-'}
-                          </p>
+                      </div>
+                      
+                      <div>
+                        <div className="text-xs text-muted-foreground">Ano</div>
+                        <div className="font-medium">{oportunidade.ano_oportunidade || '-'}</div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="text-xs text-muted-foreground mb-1">Descrição dos Serviços</div>
+                      <div className="p-3 bg-accent rounded-md">
+                        {oportunidade.descricao_servicos || 'Sem descrição de serviços'}
+                      </div>
+                    </div>
+                    
+                    {oportunidade.observacoes && (
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Observações Gerais</div>
+                        <div className="p-3 bg-accent rounded-md">
+                          {oportunidade.observacoes}
                         </div>
                       </div>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="project">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Detalhes do Projeto</CardTitle>
-                  <CardDescription>Informações sobre o projeto e serviços</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {isEditing ? (
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="nomeProjeto">Nome do Projeto</Label>
-                        <Input
-                          id="nomeProjeto"
-                          value={nomeProjeto}
-                          onChange={(e) => setNomeProjeto(e.target.value)}
-                          placeholder="Nome do projeto"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="descricaoServicos">Descrição dos Serviços</Label>
-                        <Textarea
-                          id="descricaoServicos"
-                          value={descricaoServicos}
-                          onChange={(e) => setDescricaoServicos(e.target.value)}
-                          placeholder="Descreva os serviços oferecidos"
-                          rows={4}
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="quarter">Quarter</Label>
-                          <Select 
-                            value={quarter} 
-                            onValueChange={setQuarter}
-                          >
-                            <SelectTrigger id="quarter">
-                              <SelectValue placeholder="Selecione o quarter" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="">Nenhum</SelectItem>
-                              <SelectItem value={`Q1/${new Date().getFullYear()}`}>Q1/{new Date().getFullYear()}</SelectItem>
-                              <SelectItem value={`Q2/${new Date().getFullYear()}`}>Q2/{new Date().getFullYear()}</SelectItem>
-                              <SelectItem value={`Q3/${new Date().getFullYear()}`}>Q3/{new Date().getFullYear()}</SelectItem>
-                              <SelectItem value={`Q4/${new Date().getFullYear()}`}>Q4/{new Date().getFullYear()}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="mes">Mês</Label>
-                          <Select 
-                            value={mes} 
-                            onValueChange={setMes}
-                          >
-                            <SelectTrigger id="mes">
-                              <SelectValue placeholder="Selecione o mês" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="">Nenhum</SelectItem>
-                              <SelectItem value="1">Janeiro</SelectItem>
-                              <SelectItem value="2">Fevereiro</SelectItem>
-                              <SelectItem value="3">Março</SelectItem>
-                              <SelectItem value="4">Abril</SelectItem>
-                              <SelectItem value="5">Maio</SelectItem>
-                              <SelectItem value="6">Junho</SelectItem>
-                              <SelectItem value="7">Julho</SelectItem>
-                              <SelectItem value="8">Agosto</SelectItem>
-                              <SelectItem value="9">Setembro</SelectItem>
-                              <SelectItem value="10">Outubro</SelectItem>
-                              <SelectItem value="11">Novembro</SelectItem>
-                              <SelectItem value="12">Dezembro</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="ano">Ano</Label>
-                          <Select 
-                            value={ano} 
-                            onValueChange={setAno}
-                          >
-                            <SelectTrigger id="ano">
-                              <SelectValue placeholder="Selecione o ano" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="">Nenhum</SelectItem>
-                              <SelectItem value={(new Date().getFullYear() - 1).toString()}>{new Date().getFullYear() - 1}</SelectItem>
-                              <SelectItem value={new Date().getFullYear().toString()}>{new Date().getFullYear()}</SelectItem>
-                              <SelectItem value={(new Date().getFullYear() + 1).toString()}>{new Date().getFullYear() + 1}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Nome do Projeto</h3>
-                        <p className="text-lg">{oportunidade.nome_projeto || '-'}</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Descrição dos Serviços</h3>
-                        <p className="text-lg whitespace-pre-line">{oportunidade.descricao_servicos || '-'}</p>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Quarter</h3>
-                          <p className="text-lg">{oportunidade.quarter_oportunidade || '-'}</p>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Mês</h3>
-                          <p className="text-lg">
-                            {oportunidade.mes_oportunidade 
-                              ? new Date(0, oportunidade.mes_oportunidade - 1).toLocaleString('pt-BR', { month: 'long' })
-                              : '-'}
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-sm font-medium text-muted-foreground">Ano</h3>
-                          <p className="text-lg">{oportunidade.ano_oportunidade || '-'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="financial">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informações Financeiras</CardTitle>
-                  <CardDescription>Valores e condições financeiras do projeto</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {isEditing ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="valorPropostaMensal">Valor da Proposta Mensal (R$)</Label>
-                        <Input
-                          id="valorPropostaMensal"
-                          type="number"
-                          value={valorPropostaMensal}
-                          onChange={(e) => setValorPropostaMensal(e.target.value)}
-                          placeholder="0,00"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="numeroAportes">Número de Aportes</Label>
-                        <Input
-                          id="numeroAportes"
-                          type="number"
-                          value={numeroAportes}
-                          onChange={(e) => setNumeroAportes(e.target.value)}
-                          placeholder="0"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="valorTotalProjeto">Valor Total do Projeto (R$)</Label>
-                        <Input
-                          id="valorTotalProjeto"
-                          type="number"
-                          value={valorTotalProjeto}
-                          onChange={(e) => setValorTotalProjeto(e.target.value)}
-                          placeholder="0,00"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Valor Mensal</h3>
-                        <p className="text-lg">
-                          {oportunidade.valor_proposta_mensal 
-                            ? `R$ ${oportunidade.valor_proposta_mensal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`
-                            : '-'}
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Número de Aportes</h3>
-                        <p className="text-lg">{oportunidade.numero_aportes || '-'}</p>
-                      </div>
-                      
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Valor Total</h3>
-                        <p className="text-lg font-bold">
-                          {oportunidade.valor_total_projeto 
-                            ? `R$ ${oportunidade.valor_total_projeto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`
-                            : '-'}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-        
-        <div>
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Observações</CardTitle>
-              <CardDescription>Histórico de observações e comentários</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="novaObservacao">Nova Observação</Label>
-                <Textarea
-                  id="novaObservacao"
-                  value={novaObservacao}
-                  onChange={(e) => setNovaObservacao(e.target.value)}
-                  placeholder="Adicione uma observação..."
-                  rows={3}
-                />
-                <Button 
-                  onClick={handleAddObservacao}
-                  disabled={!novaObservacao.trim()}
-                  className="w-full"
-                >
-                  Adicionar Observação
-                </Button>
-              </div>
-              
-              <div className="border-t pt-4 space-y-4 max-h-[400px] overflow-y-auto">
-                {observacoes.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">
-                    Nenhuma observação registrada.
-                  </p>
-                ) : (
-                  observacoes.map((obs) => (
-                    <div key={obs.id_observacao} className="border rounded-lg p-3">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="font-medium">
-                          {obs.usuarios?.nome_usuario || 'Usuário'}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(obs.data_criacao).toLocaleString()}
-                        </div>
-                      </div>
-                      <p className="whitespace-pre-line">{obs.texto_observacao}</p>
-                    </div>
-                  ))
                 )}
               </div>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader>
-              <CardTitle>Informações do Sistema</CardTitle>
-              <CardDescription>Datas e registros do sistema</CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle>Histórico de Observações</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">Data de Criação</h3>
-                <p className="text-base">
-                  {new Date(oportunidade.data_criacao).toLocaleString()}
-                </p>
+              <div className="flex gap-3">
+                <Textarea 
+                  value={novaObservacao} 
+                  onChange={(e) => setNovaObservacao(e.target.value)}
+                  placeholder="Adicione uma nova observação sobre esta oportunidade..." 
+                  className="flex-1"
+                />
+                <Button 
+                  className="self-end"
+                  onClick={handleAddObservacao}
+                  disabled={!novaObservacao.trim()}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Enviar
+                </Button>
               </div>
               
-              {oportunidade.data_ultima_modificacao && (
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Última Modificação</h3>
-                  <p className="text-base">
-                    {new Date(oportunidade.data_ultima_modificacao).toLocaleString()}
-                  </p>
+              <Separator />
+              
+              {observacoes.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground">
+                  Nenhuma observação registrada para esta oportunidade.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {observacoes.map((obs) => (
+                    <div key={obs.id_observacao} className="p-4 border rounded-lg">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="font-medium">{obs.usuarios?.nome_usuario || 'Usuário'}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {formatDate(obs.data_criacao)}
+                        </div>
+                      </div>
+                      <p className="text-sm">{obs.conteudo}</p>
+                    </div>
+                  ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Coluna da direita - Painéis laterais */}
+        <div className="space-y-6">
+          {/* Timeline de Status */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Status da Oportunidade
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="relative">
+                <div className="absolute left-4 top-0 h-full w-px bg-muted-foreground/20"></div>
+                
+                <div className="space-y-8">
+                  {['Contato', 'Negociação', 'Proposta', 'Ganho'].map((status, index) => {
+                    const isActive = index === 1; // Simulando que o status atual é "Negociação"
+                    return (
+                      <div key={status} className="relative pl-10">
+                        <div className={`absolute left-2 w-4 h-4 rounded-full border-2 ${
+                          isActive 
+                            ? 'bg-primary border-primary' 
+                            : index < 1 ? 'bg-primary/20 border-primary' : 'bg-background border-muted-foreground/30'
+                        }`}>
+                          {isActive && <div className="absolute inset-0 rounded-full animate-ping bg-primary/30"></div>}
+                        </div>
+                        <div className={`font-medium ${isActive ? 'text-primary' : index < 1 ? '' : 'text-muted-foreground/70'}`}>
+                          {status}
+                        </div>
+                        {isActive && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            Atualizado em 15/05/2023
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Informações rápidas */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2">
+                <PanelRight className="h-5 w-5" />
+                Informações Rápidas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs text-muted-foreground">ID da Oportunidade</div>
+                  <div className="font-medium">#{oportunidade.id_oportunidade}</div>
+                </div>
+                
+                <div>
+                  <div className="text-xs text-muted-foreground">Data de Envio/Recebimento</div>
+                  <div className="font-medium">
+                    {formatDate(oportunidade.data_envio_recebimento)}
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="text-xs text-muted-foreground">Última Atualização</div>
+                  <div className="font-medium">
+                    {oportunidade.data_ultima_modificacao 
+                      ? formatDate(oportunidade.data_ultima_modificacao)
+                      : 'Não disponível'}
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex gap-2 flex-wrap">
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Tag className="h-3 w-3" />
+                    Oportunidade
+                  </Badge>
+                  
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <FileSpreadsheet className="h-3 w-3" />
+                    Projeto
+                  </Badge>
+                  
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    Lead
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Ações rápidas */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>Ações Rápidas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Button className="w-full justify-start" variant="outline">
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  Enviar Email ao Cliente
+                </Button>
+                <Button className="w-full justify-start" variant="outline">
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Gerar Relatório
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
